@@ -1,0 +1,24 @@
+# Claude Workspace — gitignore
+
+# Archive folders (personal history — don't push to public repos)
+notes/archive/
+planner/archive/
+tasks/archive/
+tracker/archive/
+
+# Actual note and plan content (personal — keep local)
+notes/*.md
+planner/today.md
+tasks/tasks.md
+tracker/items.md
+
+# Keep the structure and skills — those are the reusable parts
+# Remove lines above if you WANT to track your content in git
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
