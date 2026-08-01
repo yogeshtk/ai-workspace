@@ -1,0 +1,253 @@
+/* Shared stylesheet for the Spring Boot + Docker teaching workspace. Tufte-inspired: quiet, print-friendly, generous margins. */
+
+:root {
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a4a;
+  --paper: #fdfdfb;
+  --paper-alt: #f4f1ea;
+  --rule: #d8d3c4;
+  --accent: #8a5a2f;
+  --accent-soft: #b98a52;
+  --code-bg: #f0ede3;
+  --good: #2f6b3e;
+  --bad: #a5322a;
+  --max-width: 40em;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #ece7dc;
+    --ink-soft: #b9b3a3;
+    --paper: #16140f;
+    --paper-alt: #1e1b14;
+    --rule: #3a352a;
+    --accent: #d3a06c;
+    --accent-soft: #b98a52;
+    --code-bg: #1e1b14;
+    --good: #7fbf8e;
+    --bad: #e08a83;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 3rem 1.25rem 6rem;
+}
+
+.page {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+h1, h2, h3, h4 {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+h1 {
+  font-size: 1.9rem;
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.kicker {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+h2 {
+  font-size: 1.3rem;
+  margin-top: 2.4rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--rule);
+}
+
+h3 {
+  font-size: 1.05rem;
+  margin-top: 1.8rem;
+}
+
+p { margin: 0.9rem 0; }
+
+a { color: var(--accent); text-decoration-color: var(--accent-soft); }
+a:hover { color: var(--accent-soft); }
+
+.lede {
+  font-size: 1.08rem;
+  color: var(--ink-soft);
+}
+
+code, pre, kbd {
+  font-family: "SF Mono", "Menlo", "Consolas", monospace;
+  font-size: 0.86em;
+}
+
+code {
+  background: var(--code-bg);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+
+pre {
+  background: var(--code-bg);
+  padding: 1rem 1.1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  line-height: 1.5;
+}
+pre code { background: none; padding: 0; }
+
+blockquote {
+  margin: 1.2rem 0;
+  padding: 0.2rem 0 0.2rem 1rem;
+  border-left: 3px solid var(--accent-soft);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+/* Sidenotes, Tufte-style: on wide screens they sit in the margin; on narrow screens they fall inline as a boxed aside. */
+.sidenote {
+  float: right;
+  clear: right;
+  width: 13rem;
+  margin-right: -16rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+@media (max-width: 1100px) {
+  .sidenote {
+    float: none;
+    width: auto;
+    margin: 0.8rem 0;
+    padding: 0.6rem 0.8rem;
+    background: var(--paper-alt);
+    border-left: 3px solid var(--rule);
+  }
+}
+
+.callout {
+  background: var(--paper-alt);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin: 1.4rem 0;
+}
+.callout.win { border-color: var(--good); }
+.callout.win .callout-label { color: var(--good); }
+.callout-label {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 0.4rem;
+}
+
+.source-rec {
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  margin: 1.4rem 0;
+  background: var(--paper-alt);
+}
+.source-rec a { font-weight: 600; }
+
+.ask-teacher {
+  margin-top: 2.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px dashed var(--rule);
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+
+nav.lesson-links {
+  margin-top: 3rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--rule);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+table { border-collapse: collapse; width: 100%; margin: 1.2rem 0; }
+th, td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--rule); font-size: 0.92rem; }
+th { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
+
+.quiz {
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 1.1rem 1.2rem 1.3rem;
+  margin: 1.6rem 0;
+  background: var(--paper-alt);
+}
+.quiz-prompt {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-weight: 600;
+  margin-top: 0;
+}
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.8rem 0 1rem;
+}
+.quiz-options label {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+.quiz-check {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+.quiz-check:hover { background: var(--accent); color: var(--paper); }
+.quiz-feedback {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.88rem;
+  margin: 0.9rem 0 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+}
+.quiz-feedback--correct { background: rgba(47,107,62,0.12); color: var(--good); }
+.quiz-feedback--incorrect { background: rgba(165,50,42,0.12); color: var(--bad); }
+.quiz-feedback--nudge { background: var(--code-bg); color: var(--ink-soft); }
+
+@media print {
+  body { padding: 0; font-size: 12pt; }
+  .ask-teacher, nav.lesson-links { display: none; }
+  .sidenote { float: none; width: auto; margin: 0.5rem 0; }
+}

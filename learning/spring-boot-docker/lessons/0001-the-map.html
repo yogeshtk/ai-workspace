@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 1: The Map — What You're Looking At</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="page">
+  <p class="kicker">Lesson 1 · Orientation</p>
+  <h1>The Map: What You're Looking At</h1>
+  <p class="lede">When you open your new team's repo for the first time, you'll see a pile of unfamiliar files. This lesson gives you the map before you need it — so nothing you see in week one looks random.</p>
+
+  <p>Here's the situation this is built for: you're about to be handed access to an existing Spring Boot application that runs in Docker. You didn't write it. Your first job isn't to change it — it's to <em>find your way around it</em>. That starts with knowing what each file in the repo is <em>for</em>, before you read a single line of logic.</p>
+
+  <h2>Two worlds, stacked together</h2>
+  <p>Every repo like this stacks two separate concerns on top of each other. Keeping them mentally separate is the single highest-leverage habit for navigating one of these codebases:</p>
+
+  <ul>
+    <li><strong>The application world</strong> — Java + Spring Boot. Answers: <em>what does the app do?</em></li>
+    <li><strong>The packaging/runtime world</strong> — Docker. Answers: <em>how does the app run, and alongside what?</em></li>
+  </ul>
+
+  <p>A bug in "what does the app do" is a Java/Spring Boot problem. A bug in "why won't it even start" or "why can't it reach the database" is very often a Docker problem. Half of navigating confidently is correctly sorting a question into one bucket or the other before you start digging.</p>
+
+  <h2>The application world, file by file</h2>
+  <p>A typical Spring Boot project looks like this (simplified):</p>
+  <pre><code>src/
+  main/
+    java/com/example/app/
+      AppApplication.java       ← the entry point
+      controller/
+        OrderController.java
+      service/
+        OrderService.java
+      repository/
+        OrderRepository.java
+    resources/
+      application.yml           ← configuration
+pom.xml                          ← dependencies + build instructions
+</code></pre>
+
+  <p>Three things worth fixing in memory right now:</p>
+  <ul>
+    <li><code>AppApplication.java</code> — the class annotated <code>@SpringBootApplication</code>, with the <code>main</code> method. This is where the app starts. It's usually short and mostly empty — Spring Boot's whole design goal is that this file stays boring.</li>
+    <li>The <code>controller</code> / <code>service</code> / <code>repository</code> split — a convention (not enforced by the language) for where a given kind of code lives. Controllers receive HTTP requests. Services hold business logic. Repositories talk to the database. You'll use this constantly once you start tracing requests through the code, in a later lesson.</li>
+    <li><code>application.yml</code> — externalized configuration. Database URLs, ports, feature flags. If a value looks hardcoded in Java but you'd expect it to change per environment, check here first — it's probably not hardcoded, it's read from this file.</li>
+  </ul>
+
+  <h2>The packaging/runtime world, file by file</h2>
+  <p>Alongside the Java code, you'll find Docker-specific files:</p>
+  <pre><code>Dockerfile           ← recipe: turn the built app into an image
+docker-compose.yml    ← recipe: run this image + its dependencies together
+</code></pre>
+
+  <p>Two terms to pin down precisely, because people use them loosely and it causes real confusion:</p>
+  <ul>
+    <li><strong>Image</strong> — a built, versioned snapshot of the app and everything it needs to run. An image doesn't run by itself — it's a blueprint.</li>
+    <li><strong>Container</strong> — a <em>running instance</em> of an image. When someone says "the container crashed," they mean a running instance stopped unexpectedly — the image itself is fine.</li>
+  </ul>
+
+  <p>A <code>docker-compose.yml</code> usually describes more than just your app — often a database container and maybe a cache or message queue too, wired together on a shared network. That's the "system" your one app is actually part of.</p>
+
+  <h2>The whole pipeline, end to end</h2>
+  <p>Here's how the two worlds connect, in order:</p>
+  <ol>
+    <li>You (or a teammate) write Java source code.</li>
+    <li>The build tool (Maven, reading <code>pom.xml</code>) compiles it and packages it as a runnable <strong>JAR</strong> file.</li>
+    <li>The <code>Dockerfile</code> says: "take that JAR, copy it into an <strong>image</strong>."</li>
+    <li><code>docker compose up</code> starts a <strong>container</strong> from that image — and any other containers the compose file describes (like a database).</li>
+    <li>The running container <em>is</em> your app, as far as the outside world is concerned.</li>
+  </ol>
+
+  <div class="callout win">
+    <span class="callout-label">Tangible win</span>
+    Given any Spring Boot + Docker repo, you can now point at a file and say which of the two worlds it belongs to, and roughly what job it does — before reading a line of its contents.
+  </div>
+
+  <h2>Check your recall</h2>
+
+  <div class="quiz">
+    <p class="quiz-prompt">Where would you expect to find the port number the app listens on?</p>
+    <div class="quiz-options">
+      <label><input type="radio" name="q1" value="a"> Inside the controller class file</label>
+      <label><input type="radio" name="q1" value="b"> Inside the application config file</label>
+      <label><input type="radio" name="q1" value="c"> Inside the compiled JAR archive</label>
+      <label><input type="radio" name="q1" value="d"> Inside the repository class file</label>
+    </div>
+    <button class="quiz-check" data-answer="b" data-explain="Ports, URLs, and other per-environment values are externalized into application.yml precisely so they don't have to live in Java code.">Check answer</button>
+    <p class="quiz-feedback" hidden></p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-prompt">A teammate says "the container keeps crashing." What just failed?</p>
+    <div class="quiz-options">
+      <label><input type="radio" name="q2" value="a"> A stopped running instance</label>
+      <label><input type="radio" name="q2" value="b"> A broken source file</label>
+      <label><input type="radio" name="q2" value="c"> A missing config value</label>
+      <label><input type="radio" name="q2" value="d"> A corrupted image blueprint</label>
+    </div>
+    <button class="quiz-check" data-answer="a" data-explain="A container is a running instance of an image. 'Crashing' describes the running instance stopping unexpectedly — the image itself, and the source it was built from, might be completely fine.">Check answer</button>
+    <p class="quiz-feedback" hidden></p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-prompt">Which layer is responsible for talking directly to the database?</p>
+    <div class="quiz-options">
+      <label><input type="radio" name="q3" value="a"> The controller layer only</label>
+      <label><input type="radio" name="q3" value="b"> The repository layer only</label>
+      <label><input type="radio" name="q3" value="c"> The build tool only</label>
+      <label><input type="radio" name="q3" value="d"> The compose file only</label>
+    </div>
+    <button class="quiz-check" data-answer="b" data-explain="Repositories are the data-access layer by convention — controllers and services should never talk to the database directly." >Check answer</button>
+    <p class="quiz-feedback" hidden></p>
+  </div>
+
+  <div class="source-rec">
+    <strong>Primary sources for this lesson:</strong>
+    <ul>
+      <li><a href="https://spring.io/guides/gs/spring-boot/" target="_blank" rel="noopener">Spring.io — "Getting Started: Building an Application with Spring Boot"</a> (official)</li>
+      <li><a href="https://docs.docker.com/" target="_blank" rel="noopener">Docker Docs</a> (official) — read the "What is a container" / "What is an image" pages if these terms still feel fuzzy.</li>
+    </ul>
+  </div>
+
+  <p><a href="../reference/app-anatomy-cheat-sheet.html">Reference: App Anatomy Cheat Sheet →</a> — the compressed version of this lesson, for when you're staring at an unfamiliar repo later and need a quick lookup rather than the full explanation.</p>
+
+  <p class="ask-teacher">Stuck, or want to go deeper on anything above? Just ask — this agent is your teacher for this workspace, and can expand on any of these ideas, pull in your actual team's repo once you have access, or adjust the pace.</p>
+
+  <nav class="lesson-links">
+    <span>← Mission: navigating this app for your new job</span>
+    <span>Next: getting the app running locally with Docker →</span>
+  </nav>
+</div>
+<script src="../assets/quiz.js"></script>
+</body>
+</html>
