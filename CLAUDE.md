@@ -31,3 +31,19 @@ This is a local productivity workspace managed by Claude Code. It replaces Googl
 
 Skills are in `skills/`. Call one by name, e.g. `run the meeting-notes skill`.
 See `skills/CLAUDE.md` for the full list of available skills.
+
+Matt Pocock's engineering/productivity skills (installed via `npx skills@latest add mattpocock/skills`) live separately in `.agents/skills/` (symlinked into `.claude/skills/`) — see below.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as local markdown files under `.scratch/<feature-slug>/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five canonical labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — `CONTEXT.md` + `docs/adr/` at the repo root (created lazily by `/domain-modeling`). See `docs/agents/domain.md`.
