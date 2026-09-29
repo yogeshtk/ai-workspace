@@ -22,3 +22,15 @@ Thumbs.db
 # Editor
 .vscode/
 *.swp
+
+# Garmin — credentials, tokens and personal plans stay local
+garmin/.env
+garmin/.garminconnect/
+garmin/uploads.md
+garmin/plans/*.yaml
+garmin/plans/incoming/*
+!garmin/plans/incoming/.gitkeep
+garmin/plans/archive/*
+!garmin/plans/archive/.gitkeep
+__pycache__/
+.pytest_cache/

@@ -15,6 +15,7 @@ Inspired by [this XDA article](https://www.xda-developers.com/claude-code-and-lo
 | `planner/` | Google Calendar daily view |
 | `tasks/` | Google Tasks |
 | `skills/` | Google Docs templates + macros |
+| `garmin/` | Manually building Garmin Connect workouts |
 
 ---
 
