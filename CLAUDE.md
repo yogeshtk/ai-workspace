@@ -11,6 +11,7 @@ This is a local productivity workspace managed by Claude Code. It replaces Googl
 | `planner/` | Google Calendar view | Daily plan files, archived by date                   |
 | `tasks/`   | Google Tasks         | Persistent task list with active/done sections       |
 | `skills/`  | Docs templates       | Saved workflow prompts, triggered by name            |
+| `garmin/`  | Garmin Connect       | Training plans → workouts on your Garmin watch       |
 
 ## Global Rules
 

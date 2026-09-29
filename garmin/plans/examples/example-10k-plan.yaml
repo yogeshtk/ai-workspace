@@ -1,0 +1,61 @@
+# Example plan — copy this file to garmin/plans/ and edit, or ask Claude to
+# convert any plan (PDF, screenshot, pasted text) into this format.
+
+plan: 10K Build (example)
+start_date: 2026-10-05        # week 1 starts the Monday of this date
+sport: running                # default sport for workouts below
+prefix: "10K"                 # optional: prepended to every workout name
+
+workouts:
+  - name: W1 Easy Run
+    week: 1
+    day: tue
+    description: Conversational pace, stay in zone 2.
+    steps:
+      - warmup: 10min
+      - run: 25min @ hr zone 2
+      - cooldown: 5min
+
+  - name: W1 Intervals 6x400
+    week: 1
+    day: thu
+    steps:
+      - warmup: 15min @ hr zone 2
+      - repeat: 6
+        steps:
+          - run: 400m @ pace 4:10-4:20
+          - recover: 90s
+      - cooldown: 10min
+
+  - name: W1 Long Run
+    week: 1
+    day: sun
+    steps:
+      - run: 8km @ pace 5:45-6:15
+      - cooldown: lap
+
+  - name: Strength Circuit
+    date: 2026-10-08
+    sport: strength
+    steps:
+      - warmup: 5min
+      - repeat: 3
+        steps:
+          - exercise: 12 reps
+            note: Goblet squats
+          - exercise: 10 reps
+            note: Push-ups
+          - rest: 60s
+      - cooldown: 5min
+
+  - name: Sweet Spot Ride
+    week: 2
+    day: sat
+    sport: cycling
+    steps:
+      - warmup: 10min @ power zone 1
+      - repeat: 2
+        steps:
+          - ride: 12min @ power 220-240
+          - recover: 5min @ cadence 85-95
+      - cooldown: 10min

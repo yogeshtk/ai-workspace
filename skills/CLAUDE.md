@@ -14,6 +14,7 @@ Say: `run the [skill-name] skill` — Claude will read the matching file and fol
 | `weekly-review`   | `skill-weekly-review.md`    | Summarises the week across planner, tasks, tracker   |
 | `note-from-paste` | `skill-note-from-paste.md`  | Organises pasted raw text into a structured note     |
 | `triage`          | `skill-triage.md`           | Reviews tasks and tracker, flags overdue/stale items |
+| `garmin-plan`     | `skill-garmin-plan.md`      | Converts a training plan into Garmin Connect workouts |
 
 ## Adding a New Skill
 
