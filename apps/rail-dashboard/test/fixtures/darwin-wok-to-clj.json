@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-10-22T07:40:12.000+01:00",
+  "locationName": "Woking",
+  "crs": "WOK",
+  "trainServices": [
+    {
+      "std": "07:42", "etd": "On time", "platform": "3", "operator": "South Western Railway", "serviceID": "SVC1",
+      "destination": [{ "locationName": "London Waterloo", "crs": "WAT" }],
+      "subsequentCallingPoints": [{ "callingPoint": [
+        { "locationName": "Clapham Junction", "crs": "CLJ", "st": "08:12", "et": "On time" },
+        { "locationName": "London Waterloo", "crs": "WAT", "st": "08:31", "et": "On time" }
+      ] }]
+    },
+    {
+      "std": "07:48", "etd": "07:55", "platform": "1", "operator": "South Western Railway", "serviceID": "SVC5",
+      "destination": [{ "locationName": "Clapham Junction", "crs": "CLJ" }],
+      "subsequentCallingPoints": [{ "callingPoint": [
+        { "locationName": "Clapham Junction", "crs": "CLJ", "st": "08:05", "et": "08:12" }
+      ] }]
+    },
+    {
+      "std": "07:57", "etd": "08:04", "platform": "2", "operator": "South Western Railway", "serviceID": "SVC2",
+      "destination": [{ "locationName": "London Waterloo", "crs": "WAT" }],
+      "subsequentCallingPoints": [{ "callingPoint": [
+        { "locationName": "Clapham Junction", "crs": "CLJ", "st": "08:23", "et": "08:29" },
+        { "locationName": "London Waterloo", "crs": "WAT", "st": "08:42", "et": "08:48" }
+      ] }]
+    },
+    {
+      "std": "08:03", "etd": "Cancelled", "isCancelled": true, "operator": "South Western Railway", "serviceID": "SVC8",
+      "cancelReason": "This train has been cancelled because of a broken down train",
+      "destination": [{ "locationName": "Clapham Junction", "crs": "CLJ" }],
+      "subsequentCallingPoints": [{ "callingPoint": [
+        { "locationName": "Clapham Junction", "crs": "CLJ", "st": "08:20", "et": "Cancelled", "isCancelled": true }
+      ] }]
+    }
+  ]
+}

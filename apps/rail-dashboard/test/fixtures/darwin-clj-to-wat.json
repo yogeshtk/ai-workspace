@@ -1,0 +1,19 @@
+{
+  "generatedAt": "2026-10-22T07:40:12.000+01:00",
+  "locationName": "Clapham Junction",
+  "crs": "CLJ",
+  "trainServices": [
+    { "std": "08:13", "etd": "On time", "platform": "8", "serviceID": "SVC1", "operator": "South Western Railway",
+      "destination": [{ "locationName": "London Waterloo", "crs": "WAT" }],
+      "subsequentCallingPoints": [{ "callingPoint": [{ "locationName": "London Waterloo", "crs": "WAT", "st": "08:31", "et": "On time" }] }] },
+    { "std": "08:14", "etd": "On time", "platform": "10", "serviceID": "SVC6", "operator": "South Western Railway",
+      "destination": [{ "locationName": "London Waterloo", "crs": "WAT" }],
+      "subsequentCallingPoints": [{ "callingPoint": [{ "locationName": "London Waterloo", "crs": "WAT", "st": "08:24", "et": "On time" }] }] },
+    { "std": "08:20", "etd": "On time", "platform": "9", "serviceID": "SVC7", "operator": "South Western Railway",
+      "destination": [{ "locationName": "London Waterloo", "crs": "WAT" }],
+      "subsequentCallingPoints": [{ "callingPoint": [{ "locationName": "London Waterloo", "crs": "WAT", "st": "08:30", "et": "On time" }] }] },
+    { "std": "08:34", "etd": "On time", "platform": "10", "serviceID": "SVC9", "operator": "South Western Railway",
+      "destination": [{ "locationName": "London Waterloo", "crs": "WAT" }],
+      "subsequentCallingPoints": [{ "callingPoint": [{ "locationName": "London Waterloo", "crs": "WAT", "st": "08:44", "et": "On time" }] }] }
+  ]
+}

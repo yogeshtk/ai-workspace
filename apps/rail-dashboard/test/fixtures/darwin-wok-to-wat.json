@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-10-22T07:40:12.000+01:00",
+  "locationName": "Woking",
+  "crs": "WOK",
+  "filterLocationName": "London Waterloo",
+  "filtercrs": "WAT",
+  "filterType": "to",
+  "platformAvailable": true,
+  "areServicesAvailable": true,
+  "nrccMessages": [{ "Value": "<p>Disruption between <a href=\"x\">Surbiton</a> and London Waterloo.</p>" }],
+  "trainServices": [
+    {
+      "std": "07:42", "etd": "On time", "platform": "3", "operator": "South Western Railway", "operatorCode": "SW",
+      "isCancelled": false, "serviceType": "train", "serviceID": "SVC1",
+      "origin": [{ "locationName": "Portsmouth Harbour", "crs": "PMH" }],
+      "destination": [{ "locationName": "London Waterloo", "crs": "WAT" }],
+      "subsequentCallingPoints": [{ "callingPoint": [
+        { "locationName": "Clapham Junction", "crs": "CLJ", "st": "08:12", "et": "On time" },
+        { "locationName": "London Waterloo", "crs": "WAT", "st": "08:31", "et": "On time" }
+      ] }]
+    },
+    {
+      "std": "07:57", "etd": "08:04", "platform": "2", "operator": "South Western Railway",
+      "isCancelled": false, "serviceID": "SVC2", "delayReason": "This train has been delayed by a fault with the signalling system",
+      "destination": [{ "locationName": "London Waterloo", "crs": "WAT" }],
+      "subsequentCallingPoints": [{ "callingPoint": [
+        { "locationName": "Clapham Junction", "crs": "CLJ", "st": "08:23", "et": "08:29" },
+        { "locationName": "London Waterloo", "crs": "WAT", "st": "08:42", "et": "08:48" }
+      ] }]
+    },
+    {
+      "std": "08:12", "etd": "Cancelled", "platform": null, "operator": "South Western Railway",
+      "isCancelled": true, "serviceID": "SVC3", "cancelReason": "This train has been cancelled because of a shortage of train crew",
+      "destination": [{ "locationName": "London Waterloo", "crs": "WAT" }],
+      "subsequentCallingPoints": [{ "callingPoint": [
+        { "locationName": "London Waterloo", "crs": "WAT", "st": "09:01", "et": "Cancelled", "isCancelled": true }
+      ] }]
+    },
+    {
+      "std": "08:27", "etd": "Delayed", "operator": "South Western Railway", "serviceID": "SVC4",
+      "destination": [{ "locationName": "London Waterloo", "crs": "WAT" }],
+      "subsequentCallingPoints": [{ "callingPoint": [
+        { "locationName": "London Waterloo", "crs": "WAT", "st": "09:16", "et": "Delayed" }
+      ] }]
+    }
+  ]
+}

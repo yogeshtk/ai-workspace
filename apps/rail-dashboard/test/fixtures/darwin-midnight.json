@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-10-22T23:50:00.000+01:00",
+  "locationName": "London Waterloo",
+  "crs": "WAT",
+  "trainServices": [
+    { "std": "23:55", "etd": "00:02", "platform": "12", "serviceID": "LATE1", "operator": "South Western Railway",
+      "destination": [{ "locationName": "Woking", "crs": "WOK" }],
+      "subsequentCallingPoints": [{ "callingPoint": [
+        { "locationName": "Clapham Junction", "crs": "CLJ", "st": "00:03", "et": "00:10" },
+        { "locationName": "Woking", "crs": "WOK", "st": "00:28", "et": "00:35" }
+      ] }] },
+    { "std": "00:15", "etd": "On time", "platform": "10", "serviceID": "LATE2", "operator": "South Western Railway",
+      "destination": [{ "locationName": "Woking", "crs": "WOK" }],
+      "subsequentCallingPoints": [{ "callingPoint": [{ "locationName": "Woking", "crs": "WOK", "st": "00:48", "et": "On time" }] }] }
+  ]
+}
