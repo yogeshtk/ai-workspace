@@ -11,12 +11,13 @@
     "build": "node scripts/build.mjs",
     "start": "node src/server/main.ts",
     "dev": "node scripts/build.mjs && node --watch src/server/main.ts",
-    "test": "node --test --test-reporter=spec \"test/**/*.test.ts\"",
+    "test": "node --test --test-reporter=spec \"test/unit/**/*.test.ts\" \"test/integration/**/*.test.ts\"",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.sw.json",
-    "check": "npm run typecheck && npm test && npm run build",
+    "check": "npm run typecheck && npm test && npm run test:ui",
     "timetable:import": "node src/server/timetable/import-cli.ts",
     "measure": "node scripts/measure.mjs",
-    "icons": "node scripts/gen-icons.mjs"
+    "icons": "node scripts/gen-icons.mjs",
+    "test:ui": "node scripts/build.mjs && node --test --test-reporter=spec \"test/ui/**/*.test.ts\""
   },
   "dependencies": {
     "uk-railway-stations": "^1.12.0"
