@@ -7,7 +7,10 @@ declare const self: ServiceWorkerGlobalScope;
 declare const __BUILD_ID__: string;
 
 const CACHE = `rail-shell-${__BUILD_ID__}`;
-const SHELL = ['/', '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png'];
+const SHELL = [
+  '/', '/index.html', '/app.js', '/styles.css', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png',
+  '/fonts/roboto-latin-400-normal.woff2', '/fonts/roboto-latin-500-normal.woff2', '/fonts/roboto-latin-700-normal.woff2',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

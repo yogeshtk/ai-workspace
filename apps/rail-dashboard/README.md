@@ -11,9 +11,22 @@ Open it, tap **GO TO WORK** or **GO HOME**, and you see your next five journeys.
 - live delays and cancellations
 - whether the data is **Live**, **Timetable**, **Cached** or **Demo**
 
-<img src="docs/screenshot-disrupted-demo.png" width="300" alt="Dashboard in demo mode with a simulated delay: a direct train and a connection flagged as risky"> <img src="docs/screenshot-future-date.png" width="300" alt="Planning a future date from the timetable">
+<img src="docs/screenshot-disrupted-demo.png" width="260" alt="Dashboard in demo mode with a simulated delay: a direct train and a connection flagged as risky"> <img src="docs/screenshot-dark.png" width="260" alt="The same view in dark mode"> <img src="docs/screenshot-settings.png" width="260" alt="Settings: stations, commute times and connection preferences">
 
 *Screenshots are from DEMO mode (simulated trains, `DEMO_SCENARIO=disrupted`).*
+
+### Look and feel
+
+The UI follows [MUI](https://mui.com)'s default Material theme, rebuilt in plain CSS (`public/styles.css`) rather than by adding React and MUI. That keeps the app script at about 9 KB compressed. It uses:
+
+- MUI's palette (primary `#1976d2`, secondary purple for DEMO, and its error, warning and success colours)
+- Roboto, self-hosted under the SIL Open Font License, so no third-party requests
+- 4px corners and elevation shadows
+- an app bar, outlined chips and buttons, cards, "standard" Alerts for warnings, outlined text fields, a switch, and a full-screen settings dialog
+
+Dark mode uses MUI's dark palette (`#121212`) and follows the phone setting.
+
+It deliberately differs from MUI in two ways. Tap targets are at least 44px (MUI's large sizes rather than its compact defaults), and there is no ripple animation. The browser tests in `test/ui/look.test.ts` check these values.
 
 ---
 
@@ -37,9 +50,10 @@ To use real trains, add the credentials in `.env` (copy `.env.example`). See [Da
 | `npm run build` | Bundles the client into `dist/public` (app.js ≈ 25 KB, minified). |
 | `npm start` | Starts the server (API + static PWA). |
 | `npm run dev` | Builds the client, then runs the server with `--watch`. |
-| `npm test` | 93 unit + integration tests (`node:test`, no extra deps). |
+| `npm test` | 93 unit + integration tests (`node:test`, no extra deps, no browser). |
+| `npm run test:ui` | Builds, then runs 15 browser tests in headless Chromium (MUI look, layout, tap targets, contrast, console errors). |
 | `npm run typecheck` | `tsc --noEmit` for app, tests and service worker. |
-| `npm run check` | Typecheck + tests + build. |
+| `npm run check` | Typecheck + unit/integration tests + build + browser tests. |
 | `npm run timetable:import -- …` | Imports the Network Rail timetable (see below). |
 | `npm run measure` | Measures time-to-useful-results in headless Chromium (see [Performance](#performance)). |
 
@@ -162,9 +176,9 @@ Measured with `npm run measure`. This uses headless Chromium with Pixel 7 emulat
 
 | Upstream latency (simulated) | Cold start → first results | Warm start → cached results shown | Warm start → fresh results | Tap GO HOME → fresh results |
 |---|---|---|---|---|
-| 0 ms | 0.68 s | 0.25 s | 0.44 s | 0.18 s |
-| 1500 ms | 2.06 s | 0.27 s | 1.82 s | 1.55 s |
-| 3000 ms | 3.57 s | 0.27 s | 3.33 s | 3.05 s |
+| 0 ms | 0.73 s | 0.22 s | 0.42 s | 0.19 s |
+| 1500 ms | 2.08 s | 0.23 s | 1.80 s | 1.56 s |
+| 3000 ms | 3.59 s | 0.24 s | 3.29 s | 3.06 s |
 
 The under-5-second target is met in these configurations. The app always shows the last cached results for your route at about 0.3 s, labelled **Cached** with their age, while it fetches fresh ones.
 

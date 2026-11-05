@@ -19,6 +19,7 @@ const MIME: Record<string, string> = {
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
   '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
   '.txt': 'text/plain; charset=utf-8',
 };
 
@@ -97,7 +98,8 @@ function serveStatic(req: IncomingMessage, res: ServerResponse, publicDir: strin
   const ext = extname(target);
   const name = target.slice(publicDir.length);
   // index.html, sw.js and the manifest must revalidate; hashed-free assets get a short cache (the SW versions them).
-  const cacheControl = name === '/index.html' || name === '/sw.js' || ext === '.webmanifest' ? 'no-cache' : 'public, max-age=3600';
+  const cacheControl =
+    name === '/index.html' || name === '/sw.js' || ext === '.webmanifest' ? 'no-cache' : ext === '.woff2' ? 'public, max-age=31536000, immutable' : 'public, max-age=3600';
   const useGz = entry.gz && /\bgzip\b/.test(String(req.headers['accept-encoding'] ?? ''));
   const payload = useGz ? entry.gz! : entry.body;
   res.writeHead(200, {

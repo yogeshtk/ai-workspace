@@ -5,23 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Next Train</title>
   <meta name="description" content="Your next five trains to work or home.">
-  <meta name="theme-color" content="#0b1220">
+  <meta name="theme-color" content="#1976d2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#272727" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="top">
+  <header class="top app-bar">
     <div class="clock">
       <span id="now-time" class="clock-time">--:--</span>
       <span id="now-date" class="clock-date"></span>
     </div>
     <span id="mode-badge" class="badge badge-muted" hidden></span>
-    <button id="settings-btn" class="icon-btn" type="button" aria-label="Settings">
-      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.4-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.3 2.7a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.4L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.4 2.5-1a7.4 7.4 0 0 0 1.7 1l.3 2.7h4l.3-2.7a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
+    <button id="settings-btn" class="icon-btn icon-btn-inherit" type="button" aria-label="Settings">
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>
     </button>
   </header>
 
@@ -39,8 +40,8 @@
   <section class="when" aria-label="Date and time">
     <div class="chips" id="date-chips" role="group" aria-label="Date"></div>
     <div class="when-row" id="when-row" hidden>
-      <label class="field-inline">Date <input id="date-input" type="date"></label>
-      <label class="field-inline">Leave after <input id="time-input" type="time" step="300"></label>
+      <label class="tf tf-inline"><span class="tf-label">Date</span><input id="date-input" type="date"></label>
+      <label class="tf tf-inline"><span class="tf-label">Leave after</span><input id="time-input" type="time" step="300"></label>
       <button id="back-live" class="chip chip-live" type="button">● Back to now</button>
     </div>
   </section>
@@ -48,13 +49,13 @@
   <div id="banner" class="banner" role="status" hidden></div>
 
   <div class="results-head">
-    <div class="chips chips-small" id="route-filter" role="group" aria-label="Route filter">
-      <button class="chip chip-small" data-filter="all" aria-pressed="true" type="button">All</button>
-      <button class="chip chip-small" data-filter="direct" aria-pressed="false" type="button">Direct</button>
-      <button class="chip chip-small" data-filter="change" aria-pressed="false" type="button" id="filter-via">Via change</button>
+    <div class="chips" id="route-filter" role="group" aria-label="Route filter">
+      <button class="chip" data-filter="all" aria-pressed="true" type="button">All</button>
+      <button class="chip" data-filter="direct" aria-pressed="false" type="button">Direct</button>
+      <button class="chip" data-filter="change" aria-pressed="false" type="button" id="filter-via">Via change</button>
     </div>
     <button id="refresh-btn" class="icon-btn" type="button" aria-label="Refresh">
-      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M17.6 6.4A8 8 0 1 0 19.7 14h-2.1a6 6 0 1 1-1.4-6.2L13 11h7V4z"/></svg>
+      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A5.99 5.99 0 0 1 12 18a6 6 0 1 1 0-12c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
     </button>
   </div>
 
@@ -76,25 +77,27 @@
   <dialog id="settings" class="sheet" aria-labelledby="settings-title">
     <form id="settings-form" method="dialog">
       <div class="sheet-head">
+        <button class="icon-btn icon-btn-inherit" value="cancel" formnovalidate aria-label="Close">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
         <h2 id="settings-title">Your commute</h2>
-        <button class="icon-btn" value="cancel" formnovalidate aria-label="Close">✕</button>
       </div>
       <p id="settings-intro" class="hint" hidden>Set your stations once — they're saved on this device.</p>
 
       <fieldset>
         <legend>Stations</legend>
-        <div class="station-field" data-key="home">
-          <label for="st-home">Home (A)</label>
+        <div class="station-field tf" data-key="home">
+          <label class="tf-label" for="st-home">Home (A)</label>
           <input id="st-home" autocomplete="off" placeholder="Search station or code" required>
           <ul class="suggest" role="listbox"></ul>
         </div>
-        <div class="station-field" data-key="work">
-          <label for="st-work">Work (B)</label>
+        <div class="station-field tf" data-key="work">
+          <label class="tf-label" for="st-work">Work (B)</label>
           <input id="st-work" autocomplete="off" placeholder="Search station or code" required>
           <ul class="suggest" role="listbox"></ul>
         </div>
-        <div class="station-field" data-key="transfer">
-          <label for="st-transfer">Change at (C) <span class="hint">optional</span></label>
+        <div class="station-field tf" data-key="transfer">
+          <label class="tf-label" for="st-transfer">Change at (C) — optional</label>
           <input id="st-transfer" autocomplete="off" placeholder="Search station or code">
           <ul class="suggest" role="listbox"></ul>
         </div>
@@ -103,14 +106,14 @@
       <fieldset>
         <legend>Commute times</legend>
         <div class="grid2">
-          <label>Morning from <input type="time" name="morningStart"></label>
-          <label>Morning to <input type="time" name="morningEnd"></label>
-          <label>Evening from <input type="time" name="eveningStart"></label>
-          <label>Evening to <input type="time" name="eveningEnd"></label>
-          <label>Earliest departure <input type="time" name="earliestDeparture"></label>
-          <label>Latest departure <input type="time" name="latestDeparture"></label>
-          <label>Arrive at work by <input type="time" name="arriveWorkBy"></label>
-          <label>Default direction
+          <label class="tf"><span class="tf-label">Morning from</span><input type="time" name="morningStart"></label>
+          <label class="tf"><span class="tf-label">Morning to</span><input type="time" name="morningEnd"></label>
+          <label class="tf"><span class="tf-label">Evening from</span><input type="time" name="eveningStart"></label>
+          <label class="tf"><span class="tf-label">Evening to</span><input type="time" name="eveningEnd"></label>
+          <label class="tf"><span class="tf-label">Earliest departure</span><input type="time" name="earliestDeparture"></label>
+          <label class="tf"><span class="tf-label">Latest departure</span><input type="time" name="latestDeparture"></label>
+          <label class="tf"><span class="tf-label">Arrive at work by</span><input type="time" name="arriveWorkBy"></label>
+          <label class="tf"><span class="tf-label">Default direction</span>
             <select name="defaultDirection">
               <option value="auto">Automatic (by time)</option>
               <option value="work">Go to work</option>
@@ -123,22 +126,22 @@
       <fieldset>
         <legend>Connections</legend>
         <div class="grid2">
-          <label>Min. change time (min) <input type="number" name="minTransferMinutes" min="0" max="60" inputmode="numeric"></label>
-          <label>Extra walking time (min) <input type="number" name="walkingMinutes" min="0" max="30" inputmode="numeric"></label>
-          <label>Max. changes
+          <label class="tf"><span class="tf-label">Min. change time (min)</span><input type="number" name="minTransferMinutes" min="0" max="60" inputmode="numeric"></label>
+          <label class="tf"><span class="tf-label">Extra walking time (min)</span><input type="number" name="walkingMinutes" min="0" max="30" inputmode="numeric"></label>
+          <label class="tf"><span class="tf-label">Max. changes</span>
             <select name="maxChanges"><option value="1">1 (direct + via C)</option><option value="0">0 (direct only)</option></select>
           </label>
-          <label class="check"><input type="checkbox" name="preferDirect"> Prefer direct trains</label>
+          <label class="switch"><input type="checkbox" role="switch" name="preferDirect"><span class="switch-track" aria-hidden="true"></span><span>Prefer direct trains</span></label>
         </div>
       </fieldset>
 
       <fieldset>
         <legend>Updates</legend>
         <div class="grid2">
-          <label>Refresh every
+          <label class="tf"><span class="tf-label">Refresh every</span>
             <select name="refreshSeconds"><option value="30">30 s</option><option value="60">1 min</option><option value="120">2 min</option><option value="300">5 min</option></select>
           </label>
-          <label>Search window
+          <label class="tf"><span class="tf-label">Search window</span>
             <select name="windowMinutes"><option value="60">1 hour</option><option value="120">2 hours</option><option value="180">3 hours</option><option value="240">4 hours</option></select>
           </label>
         </div>

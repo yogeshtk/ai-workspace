@@ -4,6 +4,9 @@ import { build } from 'esbuild';
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { dirname } from 'node:path';
+
+const FONT_WEIGHTS = [400, 500, 700];
 
 const out = 'dist/public';
 rmSync(out, { recursive: true, force: true });
@@ -16,6 +19,12 @@ const stations = JSON.parse(readFileSync(require.resolve('uk-railway-stations/st
   .map((s) => [s.crsCode, s.stationName])
   .sort((a, b) => a[1].localeCompare(b[1]));
 writeFileSync(`${out}/stations.json`, JSON.stringify(stations));
+
+// Self-hosted Roboto (SIL OFL 1.1) — MUI's typeface, served from our own origin.
+mkdirSync(`${out}/fonts`, { recursive: true });
+const fontDir = dirname(require.resolve('@fontsource/roboto/package.json'));
+for (const weight of FONT_WEIGHTS) cpSync(`${fontDir}/files/roboto-latin-${weight}-normal.woff2`, `${out}/fonts/roboto-latin-${weight}-normal.woff2`);
+cpSync(`${fontDir}/LICENSE`, `${out}/fonts/LICENSE.txt`);
 
 const common = { bundle: true, minify: true, target: ['es2020', 'safari15', 'chrome100', 'firefox100'], legalComments: 'none', logLevel: 'warning' };
 await build({ ...common, entryPoints: ['src/client/main.ts'], outfile: `${out}/app.js`, format: 'esm', sourcemap: true });

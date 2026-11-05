@@ -16,6 +16,8 @@ import { cacheResult, getCachedResult, loadLastDirection, loadSelection, loadSet
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const FETCH_TIMEOUT_MS = 10_000;
+// Material "Event" icon (Apache-2.0).
+const CALENDAR_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5a2 2 0 0 0-1.99 2L3 19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>';
 
 type Filter = 'all' | 'direct' | 'change';
 
@@ -187,7 +189,7 @@ function renderWhen(): void {
   const html = [
     `<button type="button" class="chip chip-live" data-date="now" aria-pressed="${isNow}">● Now</button>`,
     ...chips.map((c) => `<button type="button" class="chip" data-date="${c.date}" aria-pressed="${!isNow && sel.date === c.date}">${esc(c.label)}</button>`),
-    `<button type="button" class="chip" data-date="pick" aria-pressed="${!isNow && !chips.some((c) => c.date === sel.date)}">📅 ${!isNow && !chips.some((c) => c.date === sel.date) ? esc(sel.date) : 'Pick date'}</button>`,
+    `<button type="button" class="chip" data-date="pick" aria-pressed="${!isNow && !chips.some((c) => c.date === sel.date)}">${CALENDAR_ICON}${!isNow && !chips.some((c) => c.date === sel.date) ? esc(sel.date) : 'Pick date'}</button>`,
   ].join('');
   const box = $('date-chips');
   if (box.innerHTML !== html) box.innerHTML = html;
