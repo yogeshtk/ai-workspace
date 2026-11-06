@@ -1,6 +1,6 @@
 # Skill: Diagram
 
-**Trigger:** `run the diagram skill` (also: "make a flowchart / diagram of …", "change the … diagram")
+**Trigger:** `run the Diagram skill` (also: "make a flowchart / diagram of …", "change the … diagram")
 **Output:** A diagram JSON file in `diagrams/` (the source of truth) plus a standalone HTML page `diagrams/[name].html` that shows it
 
 The diagram tool lives in `tools/diagram/`. The full reference is `tools/diagram/API.md`. All edits go through the operations API, never through free-hand rewriting of coordinates.
