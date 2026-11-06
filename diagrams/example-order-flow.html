@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Order fulfilment</title>
+<style>
+  body { margin: 0; background: #F8FAFC; color: #0F172A; font-family: Inter, "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; }
+  header { padding: 20px 16px 4px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p { margin: 0; color: #475569; font-size: 14px; }
+  main { padding: 16px; max-width: 1200px; margin: 0 auto; overflow-x: auto; }
+  main svg { max-width: 100%; height: auto; border: 1px solid #E2E8F0; border-radius: 10px; background: #fff; }
+</style>
+</head>
+<body>
+<header><h1>Order fulfilment</h1></header>
+<main><svg xmlns="http://www.w3.org/2000/svg" width="460" height="858" viewBox="0 -10 460 858" font-family='Inter, "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif'><rect x="0" y="-10" width="460" height="858" fill="#FFFFFF"/><g class="dg-edge" data-kind="edge" data-id="e1"><path d="M215,94 L215,164" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round"/><polygon points="215,164 209.9,153.8 220.1,153.8" fill="#475569"/></g><g class="dg-edge" data-kind="edge" data-id="e2"><path d="M215,224 L215,294" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round"/><polygon points="215,294 209.9,283.8 220.1,283.8" fill="#475569"/></g><g class="dg-edge" data-kind="edge" data-id="e3"><path d="M215,384 L215,416 Q215,424 223,424 L312,424 Q320,424 320,432 L320,464" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round"/><polygon points="320,464 314.9,453.8 325.1,453.8" fill="#475569"/><rect x="252.4" y="414.2" width="30.2" height="19.6" rx="4" fill="#FFFFFF"/><text text-anchor="middle" font-size="12" fill="#334155"><tspan x="267.5" y="428.2">yes</tspan></text></g><g class="dg-edge" data-kind="edge" data-id="e4"><path d="M215,384 L215,411 Q215,419 207,419 L128,419 Q120,419 120,427 L120,454" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round"/><polygon points="120,454 114.9,443.8 125.1,443.8" fill="#475569"/><rect x="155.8" y="409.2" width="23.4" height="19.6" rx="4" fill="#FFFFFF"/><text text-anchor="middle" font-size="12" fill="#334155"><tspan x="167.5" y="423.2">no</tspan></text></g><g class="dg-edge" data-kind="edge" data-id="e5"><path d="M40,494 L24,494 Q16,494 16,486 L16,202 Q16,194 24,194 L145,194" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 4"/><polygon points="145,194 134.8,199.1 134.8,188.9" fill="#475569"/></g><g class="dg-edge" data-kind="edge" data-id="e6"><path d="M320,524 L320,556 Q320,564 312,564 L123,564 Q115,564 115,572 L115,604" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="6 4"/><polygon points="115,604 109.9,593.8 120.1,593.8" fill="#475569"/><polygon points="320,524 325.1,534.3 314.9,534.3" fill="#475569"/><rect x="192.3" y="554.2" width="50.3" height="19.6" rx="4" fill="#FFFFFF"/><text text-anchor="middle" font-size="12" fill="#334155"><tspan x="217.5" y="568.2">update</tspan></text></g><g class="dg-edge" data-kind="edge" data-id="e7"><path d="M320,524 L320,561 Q320,569 312,569 L303,569 Q295,569 295,577 L295,614" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round"/><polygon points="295,614 289.9,603.8 300.1,603.8" fill="#475569"/></g><g class="dg-edge" data-kind="edge" data-id="e8"><path d="M295,674 L295,706 Q295,714 287,714 L223,714 Q215,714 215,722 L215,754" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round"/><polygon points="215,754 209.9,743.8 220.1,743.8" fill="#475569"/></g><g class="dg-node dg-type-terminator" data-kind="node" data-id="start"><rect x="145" y="40" width="140" height="54" rx="27" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/><text text-anchor="middle" font-size="13" fill="#1E293B" font-weight="600"><tspan x="215" y="71.6">Order received</tspan></text></g><g class="dg-node dg-type-process" data-kind="node" data-id="pay"><rect x="145" y="164" width="140" height="60" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/><text text-anchor="middle" font-size="13" fill="#1E293B"><tspan x="215" y="198.6">Take payment</tspan></text></g><g class="dg-node dg-type-decision" data-kind="node" data-id="paid"><polygon points="215,294 290,339 215,384 140,339" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/><text text-anchor="middle" font-size="13" fill="#1E293B"><tspan x="215" y="343.6">Payment OK?</tspan></text></g><g class="dg-node dg-type-note" data-kind="node" data-id="retry"><path d="M40,454 H186 L200,468 V534 H40 Z" fill="#FEF9C3" stroke="#CA8A04" stroke-width="2"/><path d="M186,454 V468 H200" fill="none" stroke="#CA8A04" stroke-width="2"/><text text-anchor="middle" font-size="13" fill="#1E293B"><tspan x="120" y="490.1">Email customer to</tspan><tspan x="120" y="507">update card</tspan></text></g><g class="dg-node dg-type-process" data-kind="node" data-id="pick"><rect x="250" y="464" width="140" height="60" rx="6" fill="#EEF2FF" stroke="#4F46E5" stroke-width="2"/><text text-anchor="middle" font-size="13" fill="#1E293B"><tspan x="320" y="498.6">Pick &amp; pack</tspan></text></g><g class="dg-node dg-type-database" data-kind="node" data-id="db"><path d="M60,616 V672 A55,12 0 0 0 170,672 V616 A55,12 0 0 0 60,616 Z" fill="#FCE7F3" stroke="#DB2777" stroke-width="2"/><ellipse cx="115" cy="616" rx="55" ry="12" fill="#FCE7F3" stroke="#DB2777" stroke-width="2"/><text text-anchor="middle" font-size="13" fill="#1E293B"><tspan x="115" y="653.6">Orders DB</tspan></text></g><g class="dg-node dg-type-data" data-kind="node" data-id="ship"><polygon points="238,614 370,614 352,674 220,674" fill="#E0F2FE" stroke="#0284C7" stroke-width="2"/><text text-anchor="middle" font-size="13" fill="#1E293B"><tspan x="295" y="648.6">Shipping label</tspan></text></g><g class="dg-node dg-type-terminator" data-kind="node" data-id="end"><rect x="145" y="754" width="140" height="54" rx="27" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/><text text-anchor="middle" font-size="13" fill="#1E293B" font-weight="600"><tspan x="215" y="785.6">Delivered</tspan></text></g></svg></main>
+<script type="application/json" id="diagram-data">
+{
+  "version": 1,
+  "meta": {"title":"Order fulfilment","direction":"TB"},
+  "nodes": [
+    {"id":"start","type":"terminator","label":"Order received","x":145,"y":40,"w":140,"h":54},
+    {"id":"pay","type":"process","label":"Take payment","x":145,"y":164,"w":140,"h":60},
+    {"id":"paid","type":"decision","label":"Payment OK?","x":140,"y":294,"w":150,"h":90},
+    {"id":"retry","type":"note","label":"Email customer to\nupdate card","x":40,"y":454,"w":160,"h":80},
+    {"id":"pick","type":"process","label":"Pick & pack","x":250,"y":464,"w":140,"h":60},
+    {"id":"db","type":"database","label":"Orders DB","x":60,"y":604,"w":110,"h":80},
+    {"id":"ship","type":"data","label":"Shipping label","x":220,"y":614,"w":150,"h":60},
+    {"id":"end","type":"terminator","label":"Delivered","x":145,"y":754,"w":140,"h":54}
+  ],
+  "edges": [
+    {"id":"e1","from":"start","to":"pay"},
+    {"id":"e2","from":"pay","to":"paid"},
+    {"id":"e3","from":"paid","to":"pick","label":"yes"},
+    {"id":"e4","from":"paid","to":"retry","label":"no"},
+    {"id":"e5","from":"retry","to":"pay","style":{"dashed":true}},
+    {"id":"e6","from":"pick","to":"db","label":"update","style":{"dashed":true,"arrow":"both"}},
+    {"id":"e7","from":"pick","to":"ship"},
+    {"id":"e8","from":"ship","to":"end"}
+  ]
+}
+</script>
+</body>
+</html>

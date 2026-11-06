@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JSON Diagram Editor</title>
+<style>
+  :root {
+    --bg: #F1F5F9; --panel: #FFFFFF; --border: #E2E8F0; --text: #0F172A; --muted: #64748B;
+    --accent: #2563EB; --accent-soft: #DBEAFE; --danger: #DC2626; --ok: #16A34A; --input: #F8FAFC; --canvas: #FFFFFF;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0B1120; --panel: #111827; --border: #1F2937; --text: #E5E7EB; --muted: #9CA3AF;
+      --accent: #60A5FA; --accent-soft: #1E3A5F; --danger: #F87171; --ok: #4ADE80; --input: #0F172A; --canvas: #FFFFFF;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0B1120; --panel: #111827; --border: #1F2937; --text: #E5E7EB; --muted: #9CA3AF;
+    --accent: #60A5FA; --accent-soft: #1E3A5F; --danger: #F87171; --ok: #4ADE80; --input: #0F172A; --canvas: #FFFFFF;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 13px/1.4 Inter, "Segoe UI", system-ui, -apple-system, sans-serif; display: grid; grid-template-rows: auto 1fr; }
+  button, select, input, textarea { font: inherit; color: inherit; }
+
+  /* toolbar */
+  .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border); }
+  .bar .title { font-weight: 600; margin-right: 8px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar .sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+  .btn { border: 1px solid var(--border); background: var(--panel); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .grow { flex: 1; }
+  .status { color: var(--muted); font-size: 12px; }
+
+  /* layout */
+  .main { display: grid; grid-template-columns: 92px 1fr 360px; min-height: 0; }
+  .palette { background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; padding: 8px 6px; display: flex; flex-direction: column; gap: 4px; }
+  .palette button { border: 1px solid transparent; background: none; border-radius: 6px; padding: 4px 2px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; color: var(--muted); }
+  .palette button:hover { border-color: var(--border); background: var(--input); color: var(--text); }
+  .palette svg { width: 60px; height: 36px; }
+  .stage { position: relative; min-width: 0; min-height: 0; }
+  .side { background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+  .tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .tabs button { flex: 1; border: 0; background: none; padding: 9px 4px; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; }
+  .tabs button.on { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+  .pane { display: none; flex: 1; min-height: 0; overflow-y: auto; padding: 12px; flex-direction: column; gap: 10px; }
+  .pane.on { display: flex; }
+
+  /* canvas */
+  .dg-host { position: absolute; inset: 0; overflow: hidden; }
+  .dg-canvas { width: 100%; height: 100%; display: block; background: var(--canvas); cursor: default; touch-action: none; user-select: none; }
+  .dg-canvas.dg-panning { cursor: grabbing; }
+  .dg-node { cursor: move; }
+  .dg-edge { cursor: pointer; }
+  .dg-edge-hit { pointer-events: stroke; }
+  .dg-port { fill: #fff; stroke: #2563EB; stroke-width: 1.5; opacity: 0; cursor: crosshair; transition: opacity .1s; }
+  .dg-node:hover .dg-port, .dg-node.dg-selected .dg-port { opacity: 1; }
+  .dg-port:hover { fill: #2563EB; }
+  .dg-inline-editor { position: absolute; z-index: 5; resize: none; border: 2px solid #2563EB; border-radius: 6px; padding: 4px 6px; text-align: center; background: #fff; color: #0F172A; outline: none; }
+  .zoombox { position: absolute; right: 12px; bottom: 12px; display: flex; gap: 4px; z-index: 2; }
+  .zoombox .btn { background: #fff; color: #0F172A; border-color: #CBD5E1; min-width: 32px; }
+  .hint { position: absolute; left: 12px; bottom: 12px; font-size: 11px; color: #64748B; background: rgba(255,255,255,.9); padding: 4px 8px; border-radius: 6px; z-index: 2; pointer-events: none; }
+
+  /* forms */
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label, .lbl { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  input[type=text], input[type=number], select, textarea { width: 100%; border: 1px solid var(--border); background: var(--input); border-radius: 6px; padding: 6px 8px; }
+  input[type=color] { width: 100%; height: 32px; border: 1px solid var(--border); border-radius: 6px; background: var(--input); padding: 2px; }
+  textarea.code { font: 12px/1.45 ui-monospace, "SF Mono", Menlo, Consolas, monospace; white-space: pre; flex: 1; min-height: 220px; resize: vertical; }
+  .check { display: flex; align-items: center; gap: 6px; }
+  .msg { font-size: 12px; padding: 6px 8px; border-radius: 6px; white-space: pre-wrap; word-break: break-word; }
+  .msg.err { color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+  .msg.ok { color: var(--ok); background: color-mix(in srgb, var(--ok) 10%, transparent); }
+  .muted { color: var(--muted); font-size: 12px; }
+  .btnrow { display: flex; gap: 6px; flex-wrap: wrap; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background: var(--input); padding: 1px 4px; border-radius: 4px; }
+  details summary { cursor: pointer; font-weight: 600; }
+  pre.ref { font: 11px/1.45 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; background: var(--input); border: 1px solid var(--border); border-radius: 6px; padding: 8px; margin: 6px 0 0; }
+
+  @media (max-width: 900px) {
+    body { grid-template-rows: auto auto; height: auto; }
+    .main { grid-template-columns: 1fr; grid-template-rows: auto 60vh auto; }
+    .palette { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--border); }
+    .side { border-left: 0; border-top: 1px solid var(--border); min-height: 420px; }
+  }
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="title" id="docTitle">Diagram</span>
+  <button class="btn" id="bNew" title="Start an empty diagram">New</button>
+  <button class="btn" id="bOpen" title="Open a .json file (or an .html exported by this tool)">Open…</button>
+  <button class="btn primary" id="bSave" title="Download the diagram JSON">Save JSON</button>
+  <span class="sep"></span>
+  <button class="btn" id="bUndo" title="Undo (Ctrl+Z)">Undo</button>
+  <button class="btn" id="bRedo" title="Redo (Ctrl+Shift+Z)">Redo</button>
+  <button class="btn" id="bDelete" title="Delete selection (Del)">Delete</button>
+  <span class="sep"></span>
+  <button class="btn" id="bLayoutTB" title="Auto-layout top to bottom">Layout ↓</button>
+  <button class="btn" id="bLayoutLR" title="Auto-layout left to right">Layout →</button>
+  <span class="sep"></span>
+  <button class="btn" id="bSVG">Export SVG</button>
+  <button class="btn" id="bPNG">Export PNG</button>
+  <button class="btn" id="bHTML" title="A standalone HTML page with the diagram and its JSON embedded">Export HTML</button>
+  <span class="grow"></span>
+  <span class="status" id="status"></span>
+  <input type="file" id="fileInput" accept=".json,.html,.htm,application/json,text/html" hidden>
+</div>
+
+<div class="main">
+  <div class="palette" id="palette" aria-label="Shapes"></div>
+  <div class="stage" id="stage">
+    <div class="zoombox">
+      <button class="btn" id="zOut" title="Zoom out">−</button>
+      <button class="btn" id="zFit" title="Fit to screen">Fit</button>
+      <button class="btn" id="zIn" title="Zoom in">+</button>
+    </div>
+    <div class="hint">Drag a blue port to connect · double-click to edit · drag empty space to pan · wheel to zoom</div>
+  </div>
+  <div class="side">
+    <div class="tabs">
+      <button data-tab="props" class="on">Properties</button>
+      <button data-tab="json">JSON</button>
+      <button data-tab="ai">AI / Ops</button>
+    </div>
+    <div class="pane on" id="pane-props"></div>
+    <div class="pane" id="pane-json">
+      <div class="muted">The diagram <em>is</em> this JSON. Edit it here (or paste JSON an AI gave you) and the canvas updates.</div>
+      <label class="check"><input type="checkbox" id="liveJson" checked> Apply automatically while typing</label>
+      <textarea class="code" id="jsonText" spellcheck="false"></textarea>
+      <div class="btnrow">
+        <button class="btn primary" id="bApplyJson">Apply JSON</button>
+        <button class="btn" id="bCopyJson">Copy</button>
+      </div>
+      <div id="jsonMsg"></div>
+    </div>
+    <div class="pane" id="pane-ai">
+      <div class="muted">Paste an <b>operations array</b> (what an AI should return) and apply it. Ops run atomically: if one fails, nothing changes.</div>
+      <textarea class="code" id="opsText" spellcheck="false" placeholder='[
+  {"op": "addNode", "id": "review", "type": "decision", "label": "Approved?"},
+  {"op": "addEdge", "from": "review", "to": "end", "label": "yes"},
+  {"op": "layout"}
+]'></textarea>
+      <div class="btnrow">
+        <button class="btn primary" id="bApplyOps">Apply ops</button>
+        <button class="btn" id="bExampleOps">Insert example</button>
+        <button class="btn" id="bCopyPrompt" title="Copies the API guide plus the current JSON, ready to paste into any AI chat">Copy AI prompt</button>
+      </div>
+      <div id="opsMsg"></div>
+      <details>
+        <summary>Operations reference</summary>
+        <pre class="ref" id="opsRef"></pre>
+      </details>
+      <details>
+        <summary>JavaScript API (browser console)</summary>
+        <pre class="ref">diagram.addNode({type:'decision', label:'OK?'})   // → id
+diagram.connect('a', 'b', 'yes')                  // → edge id
+diagram.updateNode('a', {label:'…', style:{fill:'#FFE4E6'}})
+diagram.insertBetween('a', 'b', {label:'New step'})
+diagram.removeNode('a')   diagram.removeEdge('e3')
+diagram.layout({direction:'LR'})
+diagram.applyOps([...])   diagram.load(json)
+diagram.toJSON()          diagram.summary()
+diagram.undo()            diagram.redo()
+view.fit()                view.select({kind:'node', id:'a'})</pre>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script src="diagram-core.js"></script>
+<script src="diagram-view.js"></script>
+<script>
+(function () {
+  'use strict';
+  const Core = window.DiagramCore;
+  const $ = (id) => document.getElementById(id);
+  const STORE_KEY = 'json-diagram-editor:autosave';
+
+  const STARTER = {
+    version: 1,
+    meta: { title: 'Order fulfilment', description: 'Starter diagram — edit it, or open your own JSON.', direction: 'TB' },
+    nodes: [
+      { id: 'start', type: 'terminator', label: 'Order received' },
+      { id: 'pay', type: 'process', label: 'Take payment' },
+      { id: 'paid', type: 'decision', label: 'Payment OK?' },
+      { id: 'retry', type: 'note', label: 'Email customer to\nupdate card' },
+      { id: 'pick', type: 'process', label: 'Pick & pack' },
+      { id: 'db', type: 'database', label: 'Orders DB' },
+      { id: 'ship', type: 'data', label: 'Shipping label' },
+      { id: 'end', type: 'terminator', label: 'Delivered' },
+    ],
+    edges: [
+      { from: 'start', to: 'pay' },
+      { from: 'pay', to: 'paid' },
+      { from: 'paid', to: 'pick', label: 'yes' },
+      { from: 'paid', to: 'retry', label: 'no' },
+      { from: 'retry', to: 'pay', style: { dashed: true } },
+      { from: 'pick', to: 'db', label: 'update', style: { dashed: true, arrow: 'both' } },
+      { from: 'pick', to: 'ship' },
+      { from: 'ship', to: 'end' },
+    ],
+  };
+
+  // ---------------------------------------------------------------- state
+  let initial = null;
+  try { const saved = localStorage.getItem(STORE_KEY); if (saved) initial = JSON.parse(saved); } catch (e) { /* storage unavailable */ }
+  let diagram;
+  try { diagram = new Core.Diagram(initial || STARTER); } catch (e) { diagram = new Core.Diagram(STARTER); }
+  const view = new window.DiagramView($('stage'), diagram, {
+    onSelect: () => renderProps(),
+    onError: (err) => flash(err.message, true),
+  });
+  window.diagram = diagram;
+  window.view = view;
+
+  function attach(d) {
+    d.onChange(onChange);
+    window.diagram = d;
+  }
+  attach(diagram);
+
+  function onChange() {
+    try { localStorage.setItem(STORE_KEY, diagram.toString()); } catch (e) { /* ignore */ }
+    syncJson();
+    renderProps();
+    refreshBar();
+  }
+
+  function refreshBar() {
+    $('docTitle').textContent = diagram.meta.title || 'Untitled diagram';
+    document.title = (diagram.meta.title || 'Diagram') + ' — JSON Diagram Editor';
+    $('bUndo').disabled = !diagram.canUndo();
+    $('bRedo').disabled = !diagram.canRedo();
+    $('bDelete').disabled = !view.selection;
+    $('status').textContent = `${diagram.nodes.length} nodes · ${diagram.edges.length} edges`;
+  }
+
+  let flashTimer;
+  function flash(text, isErr) {
+    $('status').textContent = text;
+    $('status').style.color = isErr ? 'var(--danger)' : 'var(--ok)';
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => { $('status').style.color = ''; refreshBar(); }, 3500);
+  }
+
+  function setMsg(el, text, ok) {
+    el.innerHTML = '';
+    if (!text) return;
+    const d = document.createElement('div');
+    d.className = 'msg ' + (ok ? 'ok' : 'err');
+    d.textContent = text;
+    el.appendChild(d);
+  }
+
+  // ---------------------------------------------------------------- palette
+  const pal = $('palette');
+  for (const type of Object.keys(Core.NODE_TYPES)) {
+    const t = Core.NODE_TYPES[type];
+    const b = document.createElement('button');
+    b.title = t.desc;
+    const mini = { nodes: [{ id: 'x', type, label: '', x: 0, y: 0, w: type === 'circle' ? 60 : 100, h: 60 }], edges: [] };
+    if (type === 'text') mini.nodes[0].label = 'Text';
+    b.innerHTML = Core.renderSVG(mini, { padding: 4, background: null }).replace('<svg ', '<svg preserveAspectRatio="xMidYMid meet" ') + `<span>${type}</span>`;
+    b.addEventListener('click', () => {
+      const c = view.viewCenter();
+      const label = type === 'group' ? 'Group' : type === 'text' ? 'Text' : type.charAt(0).toUpperCase() + type.slice(1);
+      try {
+        const offset = (diagram.nodes.length % 5) * 20;
+        const id = diagram.addNode({ type, label, x: Math.round((c.x - t.w / 2 + offset) / 10) * 10, y: Math.round((c.y - t.h / 2 + offset) / 10) * 10 });
+        view.select({ kind: 'node', id });
+      } catch (err) { flash(err.message, true); }
+    });
+    pal.appendChild(b);
+  }
+
+  // ---------------------------------------------------------------- properties panel
+  function el(html) { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; }
+  const escA = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const toHex = (c, fallback) => /^#[0-9a-f]{6}$/i.test(c || '') ? c : fallback;
+
+  function bind(root, sel, ev, fn) {
+    const node = root.querySelector(sel);
+    if (node) node.addEventListener(ev, (e) => { try { fn(e.target, e); } catch (err) { flash(err.message, true); } });
+  }
+
+  function renderProps() {
+    refreshBar();
+    const pane = $('pane-props');
+    if (pane.contains(document.activeElement) && document.activeElement.matches('input[type=text],input[type=number],textarea')) return;
+    pane.innerHTML = '';
+    const sel = view.selection;
+    if (sel && sel.kind === 'node') return nodeProps(pane, diagram.getNode(sel.id));
+    if (sel && sel.kind === 'edge') return edgeProps(pane, diagram.getEdge(sel.id));
+    docProps(pane);
+  }
+
+  function docProps(pane) {
+    const m = diagram.meta;
+    const f = el(`<div style="display:flex;flex-direction:column;gap:10px">
+      <div class="field"><label>Title</label><input type="text" id="pTitle" value="${escA(m.title)}"></div>
+      <div class="field"><label>Description</label><textarea id="pDesc" rows="3">${escA(m.description || '')}</textarea></div>
+      <div class="field"><label>Flow direction</label><select id="pDir"><option value="TB">Top → bottom</option><option value="LR">Left → right</option></select></div>
+      <div class="muted">Nothing selected. Click a shape or connector to edit it. Shapes from the left palette are added at the centre of the view.</div>
+      <div class="muted"><b>Tip:</b> any node without <code>x</code>/<code>y</code> in the JSON is placed automatically, so an AI only has to describe <i>what</i> connects to <i>what</i>.</div>
+    </div>`);
+    pane.appendChild(f);
+    f.querySelector('#pDir').value = m.direction || 'TB';
+    bind(f, '#pTitle', 'change', (t) => diagram.setMeta({ title: t.value }));
+    bind(f, '#pDesc', 'change', (t) => diagram.setMeta({ description: t.value || null }));
+    bind(f, '#pDir', 'change', (t) => { diagram.layout({ direction: t.value }); view.fit(); });
+  }
+
+  function nodeProps(pane, n) {
+    const t = Core.NODE_TYPES[n.type];
+    const s = n.style || {};
+    const groups = diagram.nodes.filter((g) => g.type === 'group' && g.id !== n.id);
+    const f = el(`<div style="display:flex;flex-direction:column;gap:10px">
+      <div class="row">
+        <div class="field"><label>Id</label><input type="text" id="pId" value="${escA(n.id)}"></div>
+        <div class="field"><label>Type</label><select id="pType">${Object.keys(Core.NODE_TYPES).map((k) => `<option${k === n.type ? ' selected' : ''}>${k}</option>`).join('')}</select></div>
+      </div>
+      <div class="field"><label>Label</label><textarea id="pLabel" rows="3">${escA(n.label)}</textarea></div>
+      <div class="row3">
+        <div class="field"><label>Fill</label><input type="color" id="pFill" value="${toHex(s.fill, toHex(t.fill, '#ffffff'))}"></div>
+        <div class="field"><label>Border</label><input type="color" id="pStroke" value="${toHex(s.stroke, toHex(t.stroke, '#000000'))}"></div>
+        <div class="field"><label>Text</label><input type="color" id="pColor" value="${toHex(s.color, '#1e293b')}"></div>
+      </div>
+      <div class="row3">
+        <div class="field"><label>Width</label><input type="number" id="pW" value="${n.w}" min="10" step="10"></div>
+        <div class="field"><label>Height</label><input type="number" id="pH" value="${n.h}" min="10" step="10"></div>
+        <div class="field"><label>Font size</label><input type="number" id="pFs" value="${s.fontSize || 13}" min="8" max="48"></div>
+      </div>
+      <div class="row">
+        <label class="check"><input type="checkbox" id="pDashed"${s.dashed ? ' checked' : ''}> Dashed border</label>
+        <label class="check"><input type="checkbox" id="pBold"${s.bold ? ' checked' : ''}> Bold text</label>
+      </div>
+      ${n.type !== 'group' ? `<div class="field"><label>Group</label><select id="pGroup"><option value="">(none)</option>${groups.map((g) => `<option value="${escA(g.id)}"${g.id === n.group ? ' selected' : ''}>${escA(g.label || g.id)}</option>`).join('')}</select></div>` : '<div class="muted">Put shapes in this group by choosing it in their <b>Group</b> field. The group resizes around its members.</div>'}
+      <div class="field"><label>Data (JSON, optional)</label><textarea id="pData" rows="3" class="code" style="min-height:60px">${escA(n.data !== undefined ? JSON.stringify(n.data, null, 1) : '')}</textarea></div>
+      <div class="btnrow">
+        <button class="btn" id="pReset">Reset style</button>
+        <button class="btn" id="pDel" style="color:var(--danger)">Delete node</button>
+      </div>
+      <div class="muted">Connections: ${diagram.edgesOf(n.id).map((e) => `<code>${escA(e.from)} → ${escA(e.to)}</code>`).join(' ') || 'none'}</div>
+    </div>`);
+    pane.appendChild(f);
+    const up = (patch) => diagram.updateNode(n.id, patch);
+    bind(f, '#pId', 'change', (x) => { const id = diagram.renameNode(n.id, x.value); view.selection = { kind: 'node', id }; view.render(); renderProps(); });
+    bind(f, '#pType', 'change', (x) => up({ type: x.value }));
+    bind(f, '#pLabel', 'change', (x) => up({ label: x.value }));
+    bind(f, '#pFill', 'change', (x) => up({ style: { fill: x.value } }));
+    bind(f, '#pStroke', 'change', (x) => up({ style: { stroke: x.value } }));
+    bind(f, '#pColor', 'change', (x) => up({ style: { color: x.value } }));
+    bind(f, '#pW', 'change', (x) => up({ w: Number(x.value) }));
+    bind(f, '#pH', 'change', (x) => up({ h: Number(x.value) }));
+    bind(f, '#pFs', 'change', (x) => up({ style: { fontSize: Number(x.value) } }));
+    bind(f, '#pDashed', 'change', (x) => up({ style: { dashed: x.checked } }));
+    bind(f, '#pBold', 'change', (x) => up({ style: { bold: x.checked } }));
+    bind(f, '#pGroup', 'change', (x) => up({ group: x.value || null }));
+    bind(f, '#pData', 'change', (x) => up({ data: x.value.trim() ? JSON.parse(x.value) : null }));
+    bind(f, '#pReset', 'click', () => up({ style: null }));
+    bind(f, '#pDel', 'click', () => diagram.removeNode(n.id));
+  }
+
+  function edgeProps(pane, e) {
+    const s = e.style || {};
+    const opts = (list, cur) => list.map((v) => `<option${v === cur ? ' selected' : ''}>${v}</option>`).join('');
+    const nodeOpts = (cur) => diagram.nodes.map((n) => `<option value="${escA(n.id)}"${n.id === cur ? ' selected' : ''}>${escA(n.id)}</option>`).join('');
+    const sides = ['auto', 'top', 'right', 'bottom', 'left'];
+    const f = el(`<div style="display:flex;flex-direction:column;gap:10px">
+      <div class="field"><label>Id</label><input type="text" value="${escA(e.id)}" disabled></div>
+      <div class="row">
+        <div class="field"><label>From</label><select id="eFrom">${nodeOpts(e.from)}</select></div>
+        <div class="field"><label>To</label><select id="eTo">${nodeOpts(e.to)}</select></div>
+      </div>
+      <div class="field"><label>Label</label><input type="text" id="eLabel" value="${escA(e.label || '')}"></div>
+      <div class="row">
+        <div class="field"><label>Arrow</label><select id="eArrow">${opts(['end', 'start', 'both', 'none'], s.arrow || 'end')}</select></div>
+        <div class="field"><label>Routing</label><select id="eRouting">${opts(['orthogonal', 'straight', 'curved'], s.routing || 'orthogonal')}</select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Leaves from</label><select id="eFs">${opts(sides, e.fromSide || 'auto')}</select></div>
+        <div class="field"><label>Arrives at</label><select id="eTs">${opts(sides, e.toSide || 'auto')}</select></div>
+      </div>
+      <div class="row3">
+        <div class="field"><label>Colour</label><input type="color" id="eColor" value="${toHex(s.stroke, '#475569')}"></div>
+        <div class="field"><label>Width</label><input type="number" id="eW" value="${s.strokeWidth || 1.5}" min="0.5" max="10" step="0.5"></div>
+        <div class="field"><label>&nbsp;</label><label class="check"><input type="checkbox" id="eDashed"${s.dashed ? ' checked' : ''}> Dashed</label></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="eReverse">Reverse</button>
+        <button class="btn" id="eReset">Reset style</button>
+        <button class="btn" id="eDel" style="color:var(--danger)">Delete edge</button>
+      </div>
+    </div>`);
+    pane.appendChild(f);
+    const up = (patch) => diagram.updateEdge(e.id, patch);
+    bind(f, '#eFrom', 'change', (x) => up({ from: x.value }));
+    bind(f, '#eTo', 'change', (x) => up({ to: x.value }));
+    bind(f, '#eLabel', 'change', (x) => up({ label: x.value || null }));
+    bind(f, '#eArrow', 'change', (x) => up({ style: { arrow: x.value === 'end' ? null : x.value } }));
+    bind(f, '#eRouting', 'change', (x) => up({ style: { routing: x.value === 'orthogonal' ? null : x.value } }));
+    bind(f, '#eFs', 'change', (x) => up({ fromSide: x.value === 'auto' ? undefined : x.value }));
+    bind(f, '#eTs', 'change', (x) => up({ toSide: x.value === 'auto' ? undefined : x.value }));
+    bind(f, '#eColor', 'change', (x) => up({ style: { stroke: x.value } }));
+    bind(f, '#eW', 'change', (x) => up({ style: { strokeWidth: Number(x.value) } }));
+    bind(f, '#eDashed', 'change', (x) => up({ style: { dashed: x.checked || null } }));
+    bind(f, '#eReverse', 'click', () => up({ from: e.to, to: e.from, fromSide: e.toSide, toSide: e.fromSide }));
+    bind(f, '#eReset', 'click', () => up({ style: null }));
+    bind(f, '#eDel', 'click', () => diagram.removeEdge(e.id));
+  }
+
+  // ---------------------------------------------------------------- JSON tab
+  let jsonDirty = false, jsonTimer;
+  function syncJson() {
+    const ta = $('jsonText');
+    if (document.activeElement === ta && jsonDirty) return;
+    ta.value = diagram.toString();
+    jsonDirty = false;
+  }
+  function applyJson(fromTyping) {
+    try {
+      diagram.load($('jsonText').value);
+      jsonDirty = false;
+      const problems = diagram.validate();
+      setMsg($('jsonMsg'), problems.length ? problems.join('\n') : (fromTyping ? '' : 'Applied.'), !problems.length);
+      if (!fromTyping) view.fit();
+    } catch (err) {
+      setMsg($('jsonMsg'), err.message, false);
+    }
+  }
+  $('jsonText').addEventListener('input', () => {
+    jsonDirty = true;
+    clearTimeout(jsonTimer);
+    if ($('liveJson').checked) jsonTimer = setTimeout(() => applyJson(true), 500);
+  });
+  $('jsonText').addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); applyJson(false); } });
+  $('jsonText').addEventListener('blur', () => { if (!jsonDirty) syncJson(); });
+  $('bApplyJson').addEventListener('click', () => applyJson(false));
+  $('bCopyJson').addEventListener('click', () => copyText(diagram.toString(), 'JSON copied'));
+
+  // ---------------------------------------------------------------- AI / ops tab
+  $('opsRef').textContent = Core.OPS.map((o) => JSON.stringify(o.example) + (o.note ? '\n   ↳ ' + o.note : '')).join('\n');
+  $('bExampleOps').addEventListener('click', () => {
+    const first = diagram.nodes.find((n) => n.type !== 'group');
+    $('opsText').value = JSON.stringify([
+      { op: 'addNode', id: 'review', type: 'decision', label: 'Needs review?' },
+      first ? { op: 'addEdge', from: first.id, to: 'review' } : { op: 'addNode', id: 'done', type: 'terminator', label: 'Done' },
+      { op: 'addNode', id: 'manager', type: 'process', label: 'Manager approval', style: { fill: '#FFE4E6', stroke: '#E11D48' } },
+      { op: 'addEdge', from: 'review', to: 'manager', label: 'yes' },
+      { op: 'layout' },
+    ], null, 2);
+  });
+  $('bApplyOps').addEventListener('click', () => {
+    try {
+      const results = diagram.applyOps($('opsText').value);
+      setMsg($('opsMsg'), `Applied ${results.length} op(s): ${results.join(', ')}`, true);
+      view.fit();
+    } catch (err) {
+      setMsg($('opsMsg'), err.message + '\nNothing was changed.', false);
+    }
+  });
+  $('bCopyPrompt').addEventListener('click', () => {
+    const prompt = Core.AI_GUIDE + '\n\nCurrent diagram:\n' + diagram.toString() + '\nMy request: ';
+    copyText(prompt, 'AI prompt copied — paste it into your AI chat and add your request');
+  });
+
+  function copyText(text, okMsg) {
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); flash(okMsg); } catch (e) { flash('Copy failed — select and copy manually', true); }
+      ta.remove();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => flash(okMsg), fallback);
+    else fallback();
+  }
+
+  // ---------------------------------------------------------------- tabs
+  document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach((x) => x.classList.toggle('on', x === b));
+    document.querySelectorAll('.pane').forEach((p) => p.classList.toggle('on', p.id === 'pane-' + b.dataset.tab));
+    if (b.dataset.tab === 'json') syncJson();
+  }));
+
+  // ---------------------------------------------------------------- files
+  const fileName = (ext) => (Core.slug(diagram.meta.title) || 'diagram') + ext;
+  function download(text, name, type) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  function openText(text, name) {
+    try {
+      diagram.load(text);
+      view.select(null);
+      view.fit();
+      flash(`Opened ${name || 'diagram'}`);
+    } catch (err) { flash('Could not open: ' + err.message, true); }
+  }
+  $('bOpen').addEventListener('click', () => $('fileInput').click());
+  $('fileInput').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (f) f.text().then((t) => openText(t, f.name));
+    e.target.value = '';
+  });
+  $('stage').addEventListener('dragover', (e) => e.preventDefault());
+  $('stage').addEventListener('drop', (e) => {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (f) f.text().then((t) => openText(t, f.name));
+  });
+  $('bNew').addEventListener('click', () => {
+    if (diagram.nodes.length && !confirm('Start a new empty diagram? (Undo can bring the current one back.)')) return;
+    diagram.load({ meta: { title: 'Untitled diagram', direction: 'TB' }, nodes: [], edges: [] });
+    view.fit();
+  });
+  $('bSave').addEventListener('click', () => download(diagram.toString(), fileName('.json'), 'application/json'));
+  $('bSVG').addEventListener('click', () => download(diagram.toSVG(), fileName('.svg'), 'image/svg+xml'));
+  $('bHTML').addEventListener('click', () => download(diagram.toHTML(), fileName('.html'), 'text/html'));
+  $('bPNG').addEventListener('click', () => {
+    const svg = diagram.toSVG();
+    const m = svg.match(/width="([\d.]+)" height="([\d.]+)"/);
+    const w = Number(m[1]), h = Number(m[2]), scale = 2;
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = w * scale; c.height = h * scale;
+      const ctx = c.getContext('2d');
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0, w, h);
+      c.toBlob((blob) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = fileName('.png');
+        document.body.appendChild(a); a.click(); a.remove();
+      });
+    };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
+
+  // ---------------------------------------------------------------- toolbar
+  $('bUndo').addEventListener('click', () => diagram.undo());
+  $('bRedo').addEventListener('click', () => diagram.redo());
+  $('bDelete').addEventListener('click', () => view.deleteSelection());
+  $('bLayoutTB').addEventListener('click', () => { diagram.layout({ direction: 'TB' }); view.fit(); });
+  $('bLayoutLR').addEventListener('click', () => { diagram.layout({ direction: 'LR' }); view.fit(); });
+  $('zIn').addEventListener('click', () => view.zoom(1.2));
+  $('zOut').addEventListener('click', () => view.zoom(1 / 1.2));
+  $('zFit').addEventListener('click', () => view.fit());
+
+  syncJson();
+  renderProps();
+})();
+</script>
+</body>
+</html>

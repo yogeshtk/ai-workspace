@@ -11,6 +11,8 @@ This is a local productivity workspace managed by Claude Code. It replaces Googl
 | `planner/` | Google Calendar view | Daily plan files, archived by date                   |
 | `tasks/`   | Google Tasks         | Persistent task list with active/done sections       |
 | `skills/`  | Docs templates       | Saved workflow prompts, triggered by name            |
+| `diagrams/`| draw.io / Drawings   | Flowcharts as JSON (source of truth) + HTML exports  |
+| `tools/`   | —                    | Helper tools used by skills (e.g. `tools/diagram/`)  |
 
 ## Global Rules
 

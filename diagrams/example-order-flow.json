@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "meta": {"title":"Order fulfilment","direction":"TB"},
+  "nodes": [
+    {"id":"start","type":"terminator","label":"Order received","x":145,"y":40,"w":140,"h":54},
+    {"id":"pay","type":"process","label":"Take payment","x":145,"y":164,"w":140,"h":60},
+    {"id":"paid","type":"decision","label":"Payment OK?","x":140,"y":294,"w":150,"h":90},
+    {"id":"retry","type":"note","label":"Email customer to\nupdate card","x":40,"y":454,"w":160,"h":80},
+    {"id":"pick","type":"process","label":"Pick & pack","x":250,"y":464,"w":140,"h":60},
+    {"id":"db","type":"database","label":"Orders DB","x":60,"y":604,"w":110,"h":80},
+    {"id":"ship","type":"data","label":"Shipping label","x":220,"y":614,"w":150,"h":60},
+    {"id":"end","type":"terminator","label":"Delivered","x":145,"y":754,"w":140,"h":54}
+  ],
+  "edges": [
+    {"id":"e1","from":"start","to":"pay"},
+    {"id":"e2","from":"pay","to":"paid"},
+    {"id":"e3","from":"paid","to":"pick","label":"yes"},
+    {"id":"e4","from":"paid","to":"retry","label":"no"},
+    {"id":"e5","from":"retry","to":"pay","style":{"dashed":true}},
+    {"id":"e6","from":"pick","to":"db","label":"update","style":{"dashed":true,"arrow":"both"}},
+    {"id":"e7","from":"pick","to":"ship"},
+    {"id":"e8","from":"ship","to":"end"}
+  ]
+}
