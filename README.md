@@ -216,3 +216,16 @@ This is a personal setup repo — fork it and make it yours. Good extension idea
 ---
 
 *Built from the XDA setup guide. No affiliation with Anthropic or XDA.*
+
+---
+
+## Diagram skill everywhere
+
+The `diagramjs` skill (JSON-backed flowcharts, see `tools/diagram/API.md`) works in this repo out of the box. To use it in **every** project on your machine, run once:
+
+```bash
+bash tools/diagram/install.sh          # copies it to ~/.claude/skills/diagramjs
+bash tools/diagram/install.sh --link   # or symlink it, so `git pull` here keeps it updated
+```
+
+Then in any Claude Code session: `run the diagramjs skill`.

@@ -13,6 +13,7 @@
  *   validate <file.json>                          check ids and references
  *   svg <file.json> [out.svg]                     export SVG (default: same name, .svg)
  *   html <file.json> [out.html]                   export a standalone HTML page (JSON embedded)
+ *   json <file.html> [out.json]                   recover the diagram JSON from an exported HTML page
  *   guide                                         print the AI editing guide (schema + ops)
  *
  * All edits are atomic: if any op fails, the file is left untouched.
@@ -99,11 +100,13 @@ switch (cmd) {
     break;
   }
   case 'svg':
-  case 'html': {
+  case 'html':
+  case 'json': {
     const d = readDiagram(args[0]);
     const out = args[1] || swapExt(args[0], '.' + cmd);
     if (path.resolve(out) === path.resolve(args[0])) fail('output would overwrite the input');
-    fs.writeFileSync(out, cmd === 'svg' ? d.toSVG() : d.toHTML());
+    if (cmd === 'json' && fs.existsSync(out)) fail(`${out} already exists (not overwriting)`);
+    fs.writeFileSync(out, cmd === 'svg' ? d.toSVG() : cmd === 'json' ? d.toString() : d.toHTML());
     console.log(`Wrote ${out}`);
     break;
   }
@@ -111,6 +114,6 @@ switch (cmd) {
     console.log(Core.AI_GUIDE);
     break;
   default:
-    console.log(fs.readFileSync(__filename, 'utf8').split('\n').slice(2, 20).map((l) => l.replace(/^ \*? ?/, '')).join('\n'));
+    console.log(fs.readFileSync(__filename, 'utf8').split('\n').slice(2, 21).map((l) => l.replace(/^ \*? ?/, '')).join('\n'));
     if (cmd && cmd !== 'help' && cmd !== '--help') process.exit(1);
 }

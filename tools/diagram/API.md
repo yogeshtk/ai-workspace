@@ -16,6 +16,8 @@ There are no dependencies and no build step. It works offline from `file://`.
 | `diagram-view.js` | Interactive SVG canvas (drag, connect, pan/zoom, inline edit) |
 | `diagram.html` | The editor app |
 | `diagram-cli.js` | Command-line editing and export |
+| `SKILL.md` | The `diagramjs` Claude Code skill (uses the files above) |
+| `install.sh` | Installs the skill for all projects: `bash tools/diagram/install.sh` |
 
 ---
 
@@ -180,6 +182,7 @@ node tools/diagram/diagram-cli.js layout diagrams/hiring-process.json --dir TB
 node tools/diagram/diagram-cli.js validate diagrams/hiring-process.json
 node tools/diagram/diagram-cli.js html diagrams/hiring-process.json   # → diagrams/hiring-process.html
 node tools/diagram/diagram-cli.js svg diagrams/hiring-process.json    # → diagrams/hiring-process.svg
+node tools/diagram/diagram-cli.js json diagrams/old-export.html       # recover JSON from an exported page
 node tools/diagram/diagram-cli.js guide
 ```
 
