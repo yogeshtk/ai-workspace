@@ -10,7 +10,7 @@ This folder replaces draw.io / Google Drawings. Each diagram is a **JSON file**,
 
 ## How to change a diagram
 
-- Use the `Diagram` skill (`skills/skill-diagram.md`), or apply operations directly:
+- Use the `diagramjs` skill (`skills/skill-diagramjs.md`), or apply operations directly:
   `node tools/diagram/diagram-cli.js apply diagrams/[name].json '[{"op":"addNode","label":"New step"}]'`
 - To see what's in a diagram: `node tools/diagram/diagram-cli.js show diagrams/[name].json`
 - To edit visually: open `tools/diagram/diagram.html` in a browser, click **Open…** and pick the JSON.
