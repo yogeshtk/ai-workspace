@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "meta": {"title":"Star Wars — major character relationships","direction":"TB","description":"Boxes: green = Jedi · red = Sith · blue = Republic / Rebellion · amber = fell to the dark side (and came back) · grey = smugglers. Lines: dark solid = parent → child · purple dashed = teacher → student · pink = love / bond · grey = partners."},
+  "nodes": [
+    {"id":"yoda","type":"terminator","label":"Yoda","x":40,"y":40,"w":170,"h":60,"style":{"fill":"#DCFCE7","stroke":"#16A34A","bold":true}},
+    {"id":"qui-gon","type":"terminator","label":"Qui-Gon Jinn","x":300,"y":40,"w":170,"h":60,"style":{"fill":"#DCFCE7","stroke":"#16A34A","bold":true}},
+    {"id":"palpatine","type":"terminator","label":"Palpatine\n(Darth Sidious)","x":1080,"y":40,"w":170,"h":60,"style":{"fill":"#FEE2E2","stroke":"#DC2626","bold":true}},
+    {"id":"obi-wan","type":"terminator","label":"Obi-Wan Kenobi","x":300,"y":220,"w":170,"h":60,"style":{"fill":"#DCFCE7","stroke":"#16A34A","bold":true}},
+    {"id":"anakin","type":"terminator","label":"Anakin Skywalker\n(Darth Vader)","x":560,"y":220,"w":170,"h":60,"style":{"fill":"#FEF3C7","stroke":"#D97706","bold":true}},
+    {"id":"padme","type":"terminator","label":"Padmé Amidala","x":820,"y":220,"w":170,"h":60,"style":{"fill":"#DBEAFE","stroke":"#2563EB","bold":true}},
+    {"id":"luke","type":"terminator","label":"Luke Skywalker","x":300,"y":400,"w":170,"h":60,"style":{"fill":"#DCFCE7","stroke":"#16A34A","bold":true}},
+    {"id":"leia","type":"terminator","label":"Leia Organa","x":560,"y":400,"w":170,"h":60,"style":{"fill":"#DBEAFE","stroke":"#2563EB","bold":true}},
+    {"id":"han","type":"terminator","label":"Han Solo","x":820,"y":400,"w":170,"h":60,"style":{"fill":"#F1F5F9","stroke":"#64748B","bold":true}},
+    {"id":"chewie","type":"terminator","label":"Chewbacca","x":1340,"y":400,"w":170,"h":60,"style":{"fill":"#F1F5F9","stroke":"#64748B","bold":true}},
+    {"id":"kylo","type":"terminator","label":"Ben Solo\n(Kylo Ren)","x":820,"y":580,"w":170,"h":60,"style":{"fill":"#FEF3C7","stroke":"#D97706","bold":true}},
+    {"id":"rey","type":"terminator","label":"Rey","x":1080,"y":580,"w":170,"h":60,"style":{"fill":"#DCFCE7","stroke":"#16A34A","bold":true}}
+  ],
+  "edges": [
+    {"id":"e1","from":"qui-gon","to":"obi-wan","label":"master of","style":{"stroke":"#7C3AED","dashed":true}},
+    {"id":"e2","from":"qui-gon","to":"anakin","label":"discovered","fromSide":"right","toSide":"top","style":{"stroke":"#7C3AED","dashed":true}},
+    {"id":"e3","from":"palpatine","to":"anakin","label":"Sith master;\nslain by him","toSide":"top","style":{"stroke":"#7C3AED","dashed":true}},
+    {"id":"e4","from":"obi-wan","to":"anakin","label":"master of,\nlater foe","style":{"stroke":"#7C3AED","dashed":true}},
+    {"id":"e5","from":"obi-wan","to":"luke","label":"mentor","fromSide":"left","toSide":"left","style":{"stroke":"#7C3AED","dashed":true}},
+    {"id":"e6","from":"yoda","to":"luke","label":"trained","toSide":"left","style":{"stroke":"#7C3AED","dashed":true}},
+    {"id":"e7","from":"anakin","to":"padme","label":"married","style":{"stroke":"#DB2777","strokeWidth":2,"arrow":"both"}},
+    {"id":"e8","from":"anakin","to":"luke","style":{"stroke":"#334155","strokeWidth":2}},
+    {"id":"e9","from":"anakin","to":"leia","style":{"stroke":"#334155","strokeWidth":2}},
+    {"id":"e10","from":"padme","to":"luke","style":{"stroke":"#334155","strokeWidth":2}},
+    {"id":"e11","from":"padme","to":"leia","style":{"stroke":"#334155","strokeWidth":2}},
+    {"id":"e12","from":"luke","to":"leia","label":"twins","style":{"stroke":"#334155","strokeWidth":2,"arrow":"both"}},
+    {"id":"e13","from":"leia","to":"han","label":"married","style":{"stroke":"#DB2777","strokeWidth":2,"arrow":"both"}},
+    {"id":"e14","from":"han","to":"chewie","label":"co-pilots","style":{"stroke":"#64748B","strokeWidth":2,"arrow":"both"}},
+    {"id":"e15","from":"leia","to":"kylo","style":{"stroke":"#334155","strokeWidth":2}},
+    {"id":"e16","from":"han","to":"kylo","style":{"stroke":"#334155","strokeWidth":2}},
+    {"id":"e17","from":"luke","to":"kylo","label":"trained","fromSide":"bottom","toSide":"left","style":{"stroke":"#7C3AED","dashed":true}},
+    {"id":"e18","from":"luke","to":"rey","label":"trained","fromSide":"bottom","toSide":"bottom","style":{"stroke":"#7C3AED","dashed":true}},
+    {"id":"e19","from":"palpatine","to":"rey","label":"grandfather;\ndefeated by her","fromSide":"right","toSide":"right","style":{"stroke":"#334155","strokeWidth":2}},
+    {"id":"e20","from":"kylo","to":"rey","label":"Force dyad","style":{"stroke":"#DB2777","strokeWidth":2,"arrow":"both"}}
+  ]
+}
