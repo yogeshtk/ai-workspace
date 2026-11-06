@@ -183,6 +183,7 @@ node tools/diagram/diagram-cli.js validate diagrams/hiring-process.json
 node tools/diagram/diagram-cli.js html diagrams/hiring-process.json   # → diagrams/hiring-process.html
 node tools/diagram/diagram-cli.js svg diagrams/hiring-process.json    # → diagrams/hiring-process.svg
 node tools/diagram/diagram-cli.js json diagrams/old-export.html       # recover JSON from an exported page
+node tools/diagram/diagram-cli.js editor diagrams/hiring-process.json # single-file editor with this diagram loaded
 node tools/diagram/diagram-cli.js guide
 ```
 

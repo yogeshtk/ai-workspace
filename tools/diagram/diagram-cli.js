@@ -14,6 +14,7 @@
  *   svg <file.json> [out.svg]                     export SVG (default: same name, .svg)
  *   html <file.json> [out.html]                   export a standalone HTML page (JSON embedded)
  *   json <file.html> [out.json]                   recover the diagram JSON from an exported HTML page
+ *   editor <file.json> [out.html]                 single-file editor (all scripts inlined) with this diagram loaded
  *   guide                                         print the AI editing guide (schema + ops)
  *
  * All edits are atomic: if any op fails, the file is left untouched.
@@ -110,10 +111,25 @@ switch (cmd) {
     console.log(`Wrote ${out}`);
     break;
   }
+  case 'editor': {
+    const d = readDiagram(args[0]);
+    const out = args[1] || swapExt(args[0], '-editor.html');
+    if (path.resolve(out) === path.resolve(args[0])) fail('output would overwrite the input');
+    const dir = __dirname;
+    const inline = (name) => '<script>\n' + fs.readFileSync(path.join(dir, name), 'utf8').replace(/<\/script/gi, '<\\/script') + '\n</script>';
+    const preset = JSON.stringify(d.toJSON()).replace(/</g, '\\u003c');
+    const key = 'json-diagram-editor:' + (Core.slug(d.meta.title) || 'diagram');
+    let html = fs.readFileSync(path.join(dir, 'diagram.html'), 'utf8')
+      .replace('<script src="diagram-core.js"></script>', () => `<script>window.DIAGRAM_PRESET = ${preset}; window.DIAGRAM_STORE_KEY = ${JSON.stringify(key)};</script>\n` + inline('diagram-core.js'))
+      .replace('<script src="diagram-view.js"></script>', () => inline('diagram-view.js'));
+    fs.writeFileSync(out, html);
+    console.log(`Wrote ${out}`);
+    break;
+  }
   case 'guide':
     console.log(Core.AI_GUIDE);
     break;
   default:
-    console.log(fs.readFileSync(__filename, 'utf8').split('\n').slice(2, 21).map((l) => l.replace(/^ \*? ?/, '')).join('\n'));
+    console.log(fs.readFileSync(__filename, 'utf8').split('\n').slice(2, 22).map((l) => l.replace(/^ \*? ?/, '')).join('\n'));
     if (cmd && cmd !== 'help' && cmd !== '--help') process.exit(1);
 }

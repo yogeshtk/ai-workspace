@@ -62,6 +62,9 @@
   .dg-inline-editor { position: absolute; z-index: 5; resize: none; border: 2px solid #2563EB; border-radius: 6px; padding: 4px 6px; text-align: center; background: #fff; color: #0F172A; outline: none; }
   .zoombox { position: absolute; right: 12px; bottom: 12px; display: flex; gap: 4px; z-index: 2; }
   .zoombox .btn { background: #fff; color: #0F172A; border-color: #CBD5E1; min-width: 32px; }
+  .hint-touch { display: none; }
+  @media (pointer: coarse) { .hint-touch { display: inline; } .hint-mouse { display: none; } }
+  [hidden] { display: none !important; }
   .hint { position: absolute; left: 12px; bottom: 12px; font-size: 11px; color: #64748B; background: rgba(255,255,255,.9); padding: 4px 8px; border-radius: 6px; z-index: 2; pointer-events: none; }
 
   /* forms */
@@ -87,6 +90,7 @@
     .main { grid-template-columns: 1fr; grid-template-rows: auto 60vh auto; }
     .palette { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--border); }
     .side { border-left: 0; border-top: 1px solid var(--border); min-height: 420px; }
+    .hint { display: none; }
   }
 </style>
 </head>
@@ -120,7 +124,7 @@
       <button class="btn" id="zFit" title="Fit to screen">Fit</button>
       <button class="btn" id="zIn" title="Zoom in">+</button>
     </div>
-    <div class="hint">Drag a blue port to connect · double-click to edit · drag empty space to pan · wheel to zoom</div>
+    <div class="hint"><span class="hint-mouse">Drag a blue port to connect · double-click to edit · drag empty space to pan · wheel to zoom</span><span class="hint-touch">Tap a shape, then drag its blue dot to connect · double-tap to edit · drag empty space to pan</span></div>
   </div>
   <div class="side">
     <div class="tabs">
@@ -180,9 +184,10 @@ view.fit()                view.select({kind:'node', id:'a'})</pre>
   'use strict';
   const Core = window.DiagramCore;
   const $ = (id) => document.getElementById(id);
-  const STORE_KEY = 'json-diagram-editor:autosave';
+  const EMBED = !!window.DIAGRAM_EMBED;          // hosted copy where file downloads are blocked
+  const STORE_KEY = window.DIAGRAM_STORE_KEY || 'json-diagram-editor:autosave';
 
-  const STARTER = {
+  const STARTER = window.DIAGRAM_PRESET || {
     version: 1,
     meta: { title: 'Order fulfilment', description: 'Starter diagram — edit it, or open your own JSON.', direction: 'TB' },
     nodes: [
@@ -517,8 +522,14 @@ view.fit()                view.select({kind:'node', id:'a'})</pre>
     const f = e.dataTransfer.files[0];
     if (f) f.text().then((t) => openText(t, f.name));
   });
+  let newArmed = null;
   $('bNew').addEventListener('click', () => {
-    if (diagram.nodes.length && !confirm('Start a new empty diagram? (Undo can bring the current one back.)')) return;
+    if (diagram.nodes.length && !newArmed) {
+      $('bNew').textContent = 'Tap again to clear';
+      newArmed = setTimeout(() => { newArmed = null; $('bNew').textContent = 'New'; }, 3000);
+      return;
+    }
+    clearTimeout(newArmed); newArmed = null; $('bNew').textContent = 'New';
     diagram.load({ meta: { title: 'Untitled diagram', direction: 'TB' }, nodes: [], edges: [] });
     view.fit();
   });
@@ -554,6 +565,14 @@ view.fit()                view.select({kind:'node', id:'a'})</pre>
   $('zIn').addEventListener('click', () => view.zoom(1.2));
   $('zOut').addEventListener('click', () => view.zoom(1 / 1.2));
   $('zFit').addEventListener('click', () => view.fit());
+
+  if (EMBED) {
+    ['bSave', 'bSVG', 'bPNG', 'bHTML'].forEach((id) => { $(id).hidden = true; });
+    const copy = document.createElement('button');
+    copy.className = 'btn primary'; copy.id = 'bCopyTop'; copy.textContent = 'Copy JSON';
+    copy.addEventListener('click', () => copyText(diagram.toString(), 'JSON copied'));
+    $('bOpen').after(copy);
+  }
 
   syncJson();
   renderProps();
