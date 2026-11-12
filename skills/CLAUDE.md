@@ -14,6 +14,7 @@ Say: `run the [skill-name] skill` — Claude will read the matching file and fol
 | `weekly-review`   | `skill-weekly-review.md`    | Summarises the week across planner, tasks, tracker   |
 | `note-from-paste` | `skill-note-from-paste.md`  | Organises pasted raw text into a structured note     |
 | `triage`          | `skill-triage.md`           | Reviews tasks and tracker, flags overdue/stale items |
+| `ai-usage`        | `skill-ai-usage.md`         | Claude Code + Devin cost, tokens, cache hit ratio, session efficiency (runs `scripts/ai-usage-report.py`) |
 
 ## Adding a New Skill
 
