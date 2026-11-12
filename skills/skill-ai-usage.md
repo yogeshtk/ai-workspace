@@ -40,9 +40,21 @@ The HTML report has tabs for Today / 7 days / 30 days / 3 months / All time (plu
 | Source      | Where it comes from                                                                                     |
 |-------------|---------------------------------------------------------------------------------------------------------|
 | Claude Code | `~/.claude/projects/**/*.jsonl` (also `$CLAUDE_CONFIG_DIR/projects`; add more with `--claude-dir`)       |
-| Devin       | Devin API when `DEVIN_API_KEY` is set (endpoint: `DEVIN_API_URL`, default `https://api.devin.ai/v1/sessions`), or `--devin-file export.json/.csv` |
+| Devin Desktop / CLI | Local files, found automatically: `%APPDATA%\devin` (Windows), `~/Library/Application Support/devin` (macOS), `~/.config/devin` or `~/.local/share/devin` (Linux). Otherwise pass `--devin-dir <folder>` |
+| Devin cloud (optional) | Devin API when `DEVIN_API_KEY` is set (endpoint: `DEVIN_API_URL`), or `--devin-file export.json/.csv` |
 
 - Claude cost is the **API list-price equivalent**. On a Pro/Max plan, read it as the value you got, not what you were billed.
-- Devin cost = ACUs × `--acu-price` (default $2.25, or set `DEVIN_ACU_PRICE`).
+- Devin cost = ACUs × `--acu-price` (default $2.25, or set `DEVIN_ACU_PRICE`). A Devin session with no ACU data is priced by its tokens instead.
+- Devin Desktop's tokens (it runs Claude models) count toward the cache hit ratio and the efficiency score, just like Claude Code's.
 - Model prices are at the top of the script (`PRICING`). Override them with `--pricing prices.json`.
 - Only sessions whose logs are on this machine are counted. Cloud and web sessions keep their logs in their own containers.
+
+## If Devin numbers look wrong or are missing
+
+Devin doesn't publish its local file format, so the reader works from community notes. To check what your install contains, run:
+
+```bash
+python3 skills/scripts/ai-usage-report.py --devin-debug
+```
+
+This prints only the folders found and the key names inside the files, never message text. Paste the output to Claude and ask it to adjust the Devin reader in the script.

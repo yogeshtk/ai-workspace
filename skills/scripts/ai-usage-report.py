@@ -8,8 +8,9 @@ Stdlib only (Python 3.9+). No AI calls. The same input always gives the same num
 Data sources
   Claude Code : local session logs in ~/.claude/projects/**/*.jsonl
                 (also $CLAUDE_CONFIG_DIR/projects and ~/.config/claude/projects)
-  Devin       : the Devin API (set DEVIN_API_KEY) and/or an exported file
-                (--devin-file sessions.json|.csv)
+  Devin       : local Devin Desktop / Devin CLI files (found automatically,
+                or --devin-dir), plus optionally the Devin API (DEVIN_API_KEY)
+                or an exported file (--devin-file sessions.json|.csv)
 
 Outputs
   * terminal summary (pretty, or --plain for a compact chat-friendly version)
@@ -442,6 +443,379 @@ def _devin_api(base, key, warn, max_pages=200):
     return out
 
 
+# --------------------------------------------------------------------------- #
+# Devin Desktop / Devin CLI — local files (no API key needed)
+#
+# Devin doesn't document these formats; the layouts below were taken from
+# community notes (Nov 2026), so the reader looks for fields by name and skips
+# anything it doesn't recognise. Run with --devin-debug to see which keys your
+# install contains (only key names are printed, never message text).
+#   Desktop (new): <root>/User/acp-messages/<hex>.db   SQLite: meta(key,value), messages(position,kind,payload)
+#   Desktop (old): <root>/User/acp-events/*.ndjson     ACP notifications (usage_update, ...)
+#   CLI (new)    : <root>/cli/sessions/<id>/meta.json + log.jsonl  (kind=node → node.message.metadata.metrics)
+#   CLI (old)    : <root>/cli/transcripts/*.json       steps[].metadata.{metrics, committed_acu_cost}
+# --------------------------------------------------------------------------- #
+
+def devin_roots(extra):
+    home = os.path.expanduser("~")
+    cands = list(extra or [])
+    if os.environ.get("DEVIN_HOME"):
+        cands.append(os.environ["DEVIN_HOME"])
+    for base in (os.environ.get("APPDATA"), os.environ.get("LOCALAPPDATA"),
+                 os.path.join(home, "Library", "Application Support"),
+                 os.environ.get("XDG_CONFIG_HOME") or os.path.join(home, ".config"),
+                 os.environ.get("XDG_DATA_HOME") or os.path.join(home, ".local", "share")):
+        if base:
+            for name in ("devin", "Devin", "Devin Desktop"):
+                cands.append(os.path.join(base, name))
+    cands.append(os.path.join(home, ".devin"))
+    seen, out = set(), []
+    for c in cands:
+        rc = os.path.realpath(c)
+        if os.path.isdir(rc) and rc not in seen:
+            seen.add(rc)
+            out.append(rc)
+    return out
+
+
+_TOK_KEYS = {
+    "in": ("input_tokens", "inputTokens", "cognition.ai/inputTokens", "prompt_tokens", "promptTokens"),
+    "out": ("output_tokens", "outputTokens", "cognition.ai/outputTokens", "completion_tokens", "completionTokens"),
+    "cr": ("cache_read_tokens", "cacheReadTokens", "cache_read_input_tokens", "cachedInputTokens",
+           "cognition.ai/cacheReadTokens", "cached_tokens", "cachedTokens"),
+    "cw": ("cache_creation_tokens", "cacheCreationTokens", "cache_creation_input_tokens", "cacheWriteTokens",
+           "cognition.ai/cacheCreationTokens", "cognition.ai/cacheWriteTokens"),
+}
+_MODEL_KEYS = ("generation_model", "generationModel", "model", "modelId", "model_id", "model_name",
+               "cognition.ai/model")
+_TS_KEYS = ("created_at", "createdAt", "timestamp", "time", "at", "updated_at", "updatedAt")
+_ACU_KEYS = ("cognition.ai/acuAmount", "acuAmount", "acu_amount", "committed_acu_cost", "acus_consumed", "acu")
+_ID_KEYS = ("request_id", "requestId", "message_id", "messageId", "id")
+_CWD_KEYS = ("working_directory", "workingDirectory", "cwd", "workspace_dir", "workspaceDir", "rootPath")
+_TITLE_KEYS = ("title", "name", "sessionTitle")
+
+
+def _walk(o, depth=0):
+    """Yield every dict inside a JSON value (depth-limited)."""
+    if depth > 12:
+        return
+    if isinstance(o, dict):
+        yield o
+        for v in o.values():
+            yield from _walk(v, depth + 1)
+    elif isinstance(o, list):
+        for v in o:
+            yield from _walk(v, depth + 1)
+
+
+def _num(v):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def _usage_in(obj):
+    """Find token usage dicts anywhere in a payload. Returns list of usage records."""
+    found = []
+    for d in _walk(obj):
+        vals = {}
+        for k, names in _TOK_KEYS.items():
+            for n in names:
+                x = _num(d.get(n))
+                if x is not None:
+                    vals[k] = int(x)
+                    break
+        if "in" in vals or "out" in vals:
+            found.append((d, vals))
+    return found
+
+
+def _pick(obj, keys):
+    for d in _walk(obj):
+        for k in keys:
+            v = d.get(k)
+            if v not in (None, "") and not isinstance(v, (dict, list)):
+                return v
+    return None
+
+
+def _schema_note(debug, label, obj, prefix=""):
+    """Record key paths (never values) for --devin-debug."""
+    if debug is None:
+        return
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            p = f"{prefix}.{k}" if prefix else k
+            debug[label][p] += 1
+            if prefix.count(".") < 5:
+                _schema_note(debug, label, v, p)
+    elif isinstance(obj, list) and obj:
+        _schema_note(debug, label, obj[0], prefix + "[]")
+
+
+class DevinLocal:
+    def __init__(self, acu_price, warn, debug=None):
+        self.acu_price, self.warn, self.debug = acu_price, warn, debug
+        self.calls, self.events, self.sessions = [], [], {}
+        self.acu = defaultdict(list)  # sid -> [(ts, amount, kind)]  kind: delta|cumulative|unknown
+        self.files = 0
+
+    def session(self, sid, **kw):
+        s = self.sessions.setdefault(sid, {"id": sid, "source": "Devin", "title": "", "cwd": None,
+                                           "branch": None, "entrypoint": kw.get("entry"), "version": None,
+                                           "first_prompt": ""})
+        for k, v in kw.items():
+            if v and not s.get(k) and k != "entry":
+                s[k] = v
+        return s
+
+    def add_call(self, sid, ts, model, vals, key):
+        self.calls.append({"ts": ts, "sid": sid, "source": "Devin", "model": str(model or "devin"),
+                           "in": vals.get("in", 0), "out": vals.get("out", 0), "cw5": vals.get("cw", 0),
+                           "cw1h": 0, "cr": vals.get("cr", 0), "fast": False, "sub": False, "web": 0,
+                           "_key": key})
+
+    # ---- Desktop: SQLite per session -------------------------------------
+    def read_desktop_db(self, path):
+        import shutil
+        import sqlite3
+        import tempfile
+        sid = "devin-" + os.path.splitext(os.path.basename(path))[0][:12]
+        tmp = tempfile.mkdtemp(prefix="aiu-")
+        try:  # copy db + WAL so we never touch (or lock) the live database
+            for ext in ("", "-wal", "-shm"):
+                if os.path.exists(path + ext):
+                    shutil.copy2(path + ext, os.path.join(tmp, "s.db" + ext))
+            con = sqlite3.connect(os.path.join(tmp, "s.db"))
+            meta = {}
+            try:
+                meta = dict(con.execute("select key, value from meta").fetchall())
+            except sqlite3.Error:
+                pass
+            info = {}
+            try:
+                info = json.loads(meta.get("info") or "{}")
+            except ValueError:
+                pass
+            _schema_note(self.debug, "desktop meta.info", info)
+            fallback_ts = datetime.fromtimestamp(os.path.getmtime(path), tz=timezone.utc)
+            created = parse_ts(_pick(info, ("created_at", "createdAt", "startedAt"))) or fallback_ts
+            s = self.session(sid, entry="devin-desktop", title=str(_pick(info, _TITLE_KEYS) or ""),
+                             cwd=_pick(info, _CWD_KEYS))
+            try:
+                rows = con.execute("select position, kind, payload from messages order by position").fetchall()
+            except sqlite3.Error as e:
+                self.warn(f"Devin Desktop file {os.path.basename(path)}: {e}")
+                rows = []
+            con.close()
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+        last_ts = created
+        for pos, kind, payload in rows:
+            try:
+                p = json.loads(payload)
+            except (TypeError, ValueError):
+                continue
+            if self.debug is not None:
+                self.debug["desktop kinds"][kind] += 1
+                _schema_note(self.debug, f"desktop payload [{kind}]", p)
+            ts = parse_ts(_pick(p, _TS_KEYS)) or last_ts
+            last_ts = max(ts, last_ts)
+            self._payload(sid, s, kind, p, ts, f"{sid}:{pos}")
+
+    # ---- Desktop (old): ACP ndjson -------------------------------------------
+    def read_desktop_ndjson(self, path):
+        sid = "devin-" + os.path.splitext(os.path.basename(path))[0][:12]
+        s = self.session(sid, entry="devin-desktop")
+        last_ts = datetime.fromtimestamp(os.path.getmtime(path), tz=timezone.utc)
+        with open(path, encoding="utf-8", errors="ignore") as fh:
+            for i, line in enumerate(fh):
+                try:
+                    p = json.loads(line)
+                except ValueError:
+                    continue
+                upd = _pick(p, ("sessionUpdate",)) or ""
+                if self.debug is not None:
+                    self.debug["desktop(old) sessionUpdate"][upd] += 1
+                    _schema_note(self.debug, f"desktop(old) [{upd}]", p)
+                ts = parse_ts(_pick(p, _TS_KEYS)) or last_ts
+                last_ts = ts
+                self._payload(sid, s, upd, p, ts, f"{sid}:{i}")
+
+    def _payload(self, sid, s, kind, p, ts, pos_key):
+        kind = str(kind or "")
+        if kind in ("user_message", "user_message_chunk") or (_pick(p, ("role",)) == "user" and "tool" not in kind):
+            text = _pick(p, ("text", "content")) or ""
+            if isinstance(text, str) and not s["first_prompt"]:
+                s["first_prompt"] = text[:160]
+            self.events.append({"ts": ts, "sid": sid, "kind": "prompt"})
+        name = str(_pick(p, ("toolName", "tool_name", "function_name", "kind", "title")) or "tool")[:40]
+        if kind.startswith("tool_call") and kind != "tool_call_update":
+            self.events.append({"ts": ts, "sid": sid, "kind": "tool", "name": name})
+        status = _pick(p, ("status",))
+        if kind.startswith("tool_call") and str(status).lower() in ("failed", "error"):
+            self.events.append({"ts": ts, "sid": sid, "kind": "tool_error", "name": name})
+        cwd = _pick(p, _CWD_KEYS)
+        if cwd and not s["cwd"]:
+            s["cwd"] = cwd
+        for d, vals in _usage_in(p):
+            rid = _pick(d, _ID_KEYS)
+            self.add_call(sid, ts, _pick(d, _MODEL_KEYS) or _pick(p, _MODEL_KEYS), vals,
+                          f"{sid}:{rid}" if rid else pos_key)
+        for d in _walk(p):
+            for k in _ACU_KEYS:
+                a = _num(d.get(k))
+                if a is not None:
+                    ev = str(d.get("cognition.ai/eventType") or d.get("eventType") or "")
+                    mode = "cumulative" if ("at_last" in ev or "total" in ev) else (
+                        "delta" if k == "committed_acu_cost" else "unknown")
+                    self.acu[sid].append((ts, a, mode))
+                    break
+
+    # ---- CLI (new): sessions/<id>/{meta.json, log.jsonl} ----------------------
+    def read_cli_session(self, folder):
+        sid = "devin-cli-" + os.path.basename(folder)[:12]
+        meta = {}
+        try:
+            meta = json.load(open(os.path.join(folder, "meta.json"), encoding="utf-8"))
+        except (OSError, ValueError):
+            pass
+        _schema_note(self.debug, "cli meta.json", meta)
+        s = self.session(sid, entry="devin-cli", title=str(meta.get("title") or ""),
+                         cwd=meta.get("working_directory") or (meta.get("workspace_dirs") or [None])[0])
+        log = os.path.join(folder, "log.jsonl")
+        if not os.path.exists(log):
+            return
+        nodes = {}
+        with open(log, encoding="utf-8", errors="ignore") as fh:
+            for line in fh:
+                try:
+                    d = json.loads(line)
+                except ValueError:
+                    continue
+                k = d.get("kind")
+                if self.debug is not None:
+                    self.debug["cli log kinds"][k] += 1
+                    _schema_note(self.debug, f"cli log [{k}]", d)
+                if k == "node" and isinstance(d.get("node"), dict):
+                    nodes[d["node"].get("id")] = d  # keep the latest version of each node
+                elif k and str(k).startswith("tool_call"):
+                    ts = parse_ts(d.get("at"))
+                    if ts and k == "tool_call_state":
+                        name = _pick(d, ("tool_name", "toolName", "name", "function_name")) or "tool"
+                        self.events.append({"ts": ts, "sid": sid, "kind": "tool", "name": str(name)[:40]})
+        for nid in sorted(nodes, key=lambda x: str(x)):
+            d = nodes[nid]
+            msg = (d["node"].get("message") or {})
+            md = msg.get("metadata") or {}
+            ts = parse_ts(md.get("created_at")) or parse_ts(d.get("at"))
+            if not ts:
+                continue
+            role = msg.get("role")
+            if role == "user":
+                self.events.append({"ts": ts, "sid": sid, "kind": "prompt"})
+            m = md.get("metrics") or {}
+            vals = {}
+            for kk, names in _TOK_KEYS.items():
+                for n in names:
+                    if _num(m.get(n)) is not None:
+                        vals[kk] = int(float(m[n]))
+                        break
+            if vals:
+                rid = md.get("request_id") or f"node{nid}"
+                self.add_call(sid, ts, md.get("generation_model") or meta.get("model"), vals, f"{sid}:{rid}")
+            a = _num(md.get("committed_acu_cost"))
+            if a:
+                self.acu[sid].append((ts, a, "delta"))
+
+    # ---- CLI (old): transcripts/*.json ------------------------------------------
+    def read_cli_transcript(self, path):
+        try:
+            t = json.load(open(path, encoding="utf-8"))
+        except (OSError, ValueError):
+            return
+        sid = "devin-cli-" + str(t.get("session_id") or os.path.splitext(os.path.basename(path))[0])[:12]
+        s = self.session(sid, entry="devin-cli")
+        model0 = (t.get("agent") or {}).get("model_name")
+        for st in t.get("steps") or []:
+            md = st.get("metadata") or {}
+            ts = parse_ts(md.get("created_at"))
+            if not ts:
+                continue
+            if md.get("is_user_input"):
+                self.events.append({"ts": ts, "sid": sid, "kind": "prompt"})
+                continue
+            m = md.get("metrics") or {}
+            vals = {kk: int(float(m[n])) for kk, names in _TOK_KEYS.items() for n in names
+                    if _num(m.get(n)) is not None}
+            if vals:
+                self.add_call(sid, ts, md.get("generation_model") or st.get("model_name") or model0, vals,
+                              f"{sid}:{md.get('request_id') or st.get('step_id')}")
+            for tc in st.get("tool_calls") or []:
+                self.events.append({"ts": ts, "sid": sid, "kind": "tool",
+                                    "name": str(tc.get("function_name") or "tool")[:40]})
+            a = _num(md.get("committed_acu_cost"))
+            if a:
+                self.acu[sid].append((ts, a, "delta"))
+
+    def finish(self):
+        # de-duplicate calls (same request seen in several updates → keep the largest)
+        best = {}
+        for c in self.calls:
+            k = c.pop("_key")
+            if k not in best or (c["out"], c["in"]) >= (best[k]["out"], best[k]["in"]):
+                best[k] = c
+        calls = []
+        acu_sids = {sid for sid, v in self.acu.items() if any(a for _, a, _ in v)}
+        for c in best.values():
+            cost, _ = call_cost(c["model"], c["in"], c["out"], c["cw5"], 0, c["cr"])
+            # Devin bills ACUs; token cost is only used when a session has no ACU data
+            c["cost"] = 0.0 if c["sid"] in acu_sids else cost
+            calls.append(c)
+        for sid, recs in self.acu.items():
+            recs.sort(key=lambda r: r[0])
+            amounts = [a for _, a, _ in recs]
+            cumulative = any(m == "cumulative" for _, _, m in recs) or (
+                all(m == "unknown" for _, _, m in recs) and len(amounts) > 1
+                and all(b >= a for a, b in zip(amounts, amounts[1:])))
+            prev = 0.0
+            for ts, a, _ in recs:
+                delta = max(a - prev, 0.0) if cumulative else a
+                prev = a if cumulative else prev
+                if delta:
+                    calls.append({"ts": ts, "sid": sid, "source": "Devin", "model": "devin-acu", "in": 0,
+                                  "out": 0, "cw5": 0, "cw1h": 0, "cr": 0, "fast": False, "sub": False,
+                                  "web": 0, "acu": delta, "cost": delta * self.acu_price})
+        for s in self.sessions.values():
+            s["repo"] = repo_for(s["cwd"])
+            if not s["title"]:
+                s["title"] = s["first_prompt"][:80] or s["id"]
+        return calls, self.events, self.sessions
+
+
+def load_devin_local(roots, acu_price, warn, debug=None):
+    dl = DevinLocal(acu_price, warn, debug)
+    for root in roots:
+        for f in sorted(glob.glob(os.path.join(root, "**", "acp-messages", "*.db"), recursive=True)):
+            dl.files += 1
+            try:
+                dl.read_desktop_db(f)
+            except Exception as e:  # noqa: BLE001 — one bad file shouldn't stop the report
+                warn(f"Skipped Devin Desktop file {os.path.basename(f)}: {e}")
+        for f in sorted(glob.glob(os.path.join(root, "**", "acp-events", "*.ndjson"), recursive=True)):
+            dl.files += 1
+            dl.read_desktop_ndjson(f)
+        for meta in sorted(glob.glob(os.path.join(root, "**", "sessions", "*", "meta.json"), recursive=True)):
+            dl.files += 1
+            dl.read_cli_session(os.path.dirname(meta))
+        for f in sorted(glob.glob(os.path.join(root, "**", "transcripts", "*.json"), recursive=True)):
+            dl.files += 1
+            dl.read_cli_transcript(f)
+    calls, events, sessions = dl.finish()
+    return calls, events, sessions, dl.files
+
+
 def load_devin(args, warn):
     raws = []
     for f in args.devin_file or []:
@@ -497,6 +871,8 @@ def summarize(calls, events, csessions, dsessions, start, end):
         for k in ("in", "out", "cw5", "cw1h", "cr", "web"):
             tot[k] += c[k]
         tot["cost"] += c["cost"]
+        tot["cost_" + c["source"]] += c["cost"]
+        tot["acu"] += c.get("acu", 0)
     input_side = tot["in"] + tot["cw5"] + tot["cw1h"] + tot["cr"]
     cache_hit = tot["cr"] / input_side if input_side else None
     # money the cache saved vs paying full input price for the cache reads
@@ -512,16 +888,18 @@ def summarize(calls, events, csessions, dsessions, start, end):
     per = defaultdict(lambda: {"calls": 0, "in": 0, "out": 0, "cw": 0, "cr": 0, "cost": 0.0,
                                "models": Counter(), "tools": Counter(), "tool_err": 0,
                                "prompts": 0, "interrupts": 0, "first": None, "last": None,
-                               "sub_cost": 0.0, "ctx_sum": 0})
+                               "sub_cost": 0.0, "ctx_sum": 0, "acus": 0.0})
     for c in C:
         p = per[c["sid"]]
-        p["calls"] += 1
+        p["acus"] += c.get("acu", 0)
+        p["calls"] += 0 if c.get("acu") else 1
         p["in"] += c["in"]
         p["out"] += c["out"]
         p["cw"] += c["cw5"] + c["cw1h"]
         p["cr"] += c["cr"]
         p["cost"] += c["cost"]
-        p["models"][c["model"]] += c["cost"]
+        if not c.get("acu"):
+            p["models"][c["model"]] += c["cost"] or 1e-12
         p["ctx_sum"] += c["in"] + c["cw5"] + c["cw1h"] + c["cr"]
         if c["sub"]:
             p["sub_cost"] += c["cost"]
@@ -566,8 +944,9 @@ def summarize(calls, events, csessions, dsessions, start, end):
             flags.append("many interrupts")
         if p["prompts"] and p["cost"] / p["prompts"] > 5:
             flags.append("costly prompts")
+        src = meta.get("source", "Claude")
         rows.append({
-            "source": "Claude", "id": sid, "title": meta.get("title") or sid[:8],
+            "source": src, "id": sid, "title": meta.get("title") or sid[:8],
             "repo": meta.get("repo", "(unknown)"), "branch": meta.get("branch") or "",
             "entry": meta.get("entrypoint") or "",
             "start": p["first"], "end": p["last"],
@@ -579,6 +958,7 @@ def summarize(calls, events, csessions, dsessions, start, end):
             "model": p["models"].most_common(1)[0][0] if p["models"] else "",
             "tools": p["tools"], "tool_calls": ntools, "tool_err": p["tool_err"],
             "score": score if p["calls"] else None, "parts": parts, "flags": flags,
+            "acus": p["acus"], "prs": 0, "status": "",
         })
     for s in D:
         rows.append({
@@ -593,14 +973,15 @@ def summarize(calls, events, csessions, dsessions, start, end):
         })
     rows.sort(key=lambda r: (-r["cost"], r["id"]))
 
-    claude_rows = [r for r in rows if r["source"] == "Claude" and r["score"] is not None]
+    claude_rows = [r for r in rows if r["score"] is not None]
     w = sum(r["cost"] for r in claude_rows)
     eff = round(sum(r["score"] * r["cost"] for r in claude_rows) / w) if w else (
         round(statistics.mean(r["score"] for r in claude_rows)) if claude_rows else None)
 
     by_model = Counter()
     for c in C:
-        by_model[price_for(c["model"])[0] or c["model"]] += c["cost"]
+        label = "Devin ACUs" if c.get("acu") else (price_for(c["model"])[0] or c["model"])
+        by_model[label] += c["cost"]
     by_repo = defaultdict(lambda: Counter())
     for r in rows:
         b = by_repo[r["repo"]]
@@ -614,25 +995,27 @@ def summarize(calls, events, csessions, dsessions, start, end):
     daily = defaultdict(Counter)
     for c in C:
         dk = c["ts"].astimezone().strftime("%Y-%m-%d")
-        daily[dk]["Claude"] += c["cost"]
+        daily[dk][c["source"]] += c["cost"]
         daily[dk]["cr"] += c["cr"]
         daily[dk]["side"] += c["in"] + c["cw5"] + c["cw1h"] + c["cr"]
     for s in D:
         daily[s["created"].astimezone().strftime("%Y-%m-%d")]["Devin"] += s["cost"]
 
-    devin_cost = sum(s["cost"] for s in D)
+    devin_cost = sum(s["cost"] for s in D) + tot["cost_Devin"]
     prompts = sum(1 for e in E if e["kind"] == "prompt") + sum(s["messages"] for s in D)
     total_tool = sum(tools_all.values())
     return {
         "start": start, "end": end,
-        "claude_cost": tot["cost"], "devin_cost": devin_cost, "cost": tot["cost"] + devin_cost,
+        "claude_cost": tot["cost_Claude"], "devin_cost": devin_cost,
+        "cost": tot["cost_Claude"] + devin_cost,
         "tokens": tot["in"] + tot["out"] + tot["cw5"] + tot["cw1h"] + tot["cr"],
         "in": tot["in"], "out": tot["out"], "cw5": tot["cw5"], "cw1h": tot["cw1h"], "cr": tot["cr"],
         "web": tot["web"], "cache_hit": cache_hit, "cache_saved": saved, "one_h_premium": one_h_premium,
         "sessions": len(rows), "claude_sessions": sum(1 for r in rows if r["source"] == "Claude"),
-        "devin_sessions": len(D), "devin_acus": sum(s["acus"] for s in D),
+        "devin_sessions": sum(1 for r in rows if r["source"] == "Devin"),
+        "devin_acus": sum(s["acus"] for s in D) + tot["acu"],
         "devin_prs": sum(s["prs"] for s in D),
-        "calls": len(C), "prompts": prompts,
+        "calls": sum(1 for c in C if not c.get("acu")), "prompts": prompts,
         "interrupts": sum(1 for e in E if e["kind"] == "interrupt"),
         "tool_calls": total_tool, "tool_errors": sum(tool_err_all.values()),
         "tools": tools_all, "tool_err": tool_err_all, "efficiency": eff,
@@ -916,6 +1299,8 @@ def session_table(S, pid):
     for r in S["rows"]:
         tools = ", ".join(f"{k} {v}" for k, v in r["tools"].most_common(4)) if r["tools"] else (
             f"{r.get('acus', 0):.1f} ACU · {r.get('prs', 0)} PR · {r.get('status', '')}" if r["source"] == "Devin" else "")
+        if r["source"] == "Devin" and r["tools"] and r.get("acus"):
+            tools = f"{r['acus']:.1f} ACU · " + tools
         flags = "".join(f'<span class="flag">{E(f)}</span>' for f in r["flags"])
         sc = r["score"]
         trs.append(
@@ -1068,8 +1453,8 @@ def render_html(panels, default_pid, meta):
 <nav class="tabs">{tabs}</nav>{body}
 <div class="card"><h3>How the numbers work</h3><div class="sm">
 <p><b>Cache hit ratio</b> = cache-read tokens ÷ all input tokens (fresh input + cache writes + cache reads). Higher is cheaper: cache reads cost 5–10% of normal input.</p>
-<p><b>Cost</b> is the API list-price equivalent of the tokens used (on a Pro/Max plan this is the value you got, not what you were billed). Devin cost = ACUs × ${meta['acu_price']:.2f}.</p>
-<p><b>Efficiency score (0–100)</b> per Claude session: cache hit ratio (40 pts) + tool success rate (20) + autonomy, i.e. model calls per prompt you typed, capped at 8 (20) + lean context, i.e. average context per call vs 400K (20). The headline score is the cost-weighted average.</p>
+<p><b>Cost</b> is the API list-price equivalent of the tokens used (on a Pro/Max plan this is the value you got, not what you were billed). Devin cost = ACUs × ${meta['acu_price']:.2f}; a Devin session with no ACU data is priced by its tokens instead.</p>
+<p><b>Efficiency score (0–100)</b> per session (Claude and Devin): cache hit ratio (40 pts) + tool success rate (20) + autonomy, i.e. model calls per prompt you typed, capped at 8 (20) + lean context, i.e. average context per call vs 400K (20). The headline score is the cost-weighted average.</p>
 <p>Flags: <i>low cache</i> &lt;70% cache hit · <i>tool errors</i> &gt;20% failed · <i>huge context</i> &gt;200K avg · <i>costly prompts</i> &gt;$5 per prompt · <i>many interrupts</i> ≥3.</p>
 </div></div>
 <footer>{E(meta['footer'])}</footer></div><script>{JS}</script></body></html>"""
@@ -1099,6 +1484,11 @@ def main():
     ap.add_argument("--claude-dir", action="append", help="extra Claude projects dir (repeatable)")
     ap.add_argument("--devin-file", action="append", help="Devin sessions export, .json or .csv (repeatable)")
     ap.add_argument("--no-devin-api", action="store_true", help="ignore DEVIN_API_KEY")
+    ap.add_argument("--devin-dir", action="append",
+                    help="Devin Desktop/CLI data folder if not found automatically (repeatable)")
+    ap.add_argument("--no-devin-local", action="store_true", help="don't read local Devin Desktop/CLI files")
+    ap.add_argument("--devin-debug", action="store_true",
+                    help="print the key names found in local Devin files (no content) and exit")
     ap.add_argument("--acu-price", type=float, default=float(os.environ.get("DEVIN_ACU_PRICE", DEFAULT_ACU_PRICE)))
     ap.add_argument("--pricing", help="JSON file overriding model prices: {model: [in, out, cache_read]}")
     ap.add_argument("--out-dir", default=default_out, help=f"where reports go (default {default_out})")
@@ -1121,10 +1511,28 @@ def main():
     dirs = claude_dirs(args.claude_dir)
     calls, events, csess, nfiles = load_claude(dirs, warn)
     dsess = load_devin(args, warn)
+    droots = [] if args.no_devin_local else devin_roots(args.devin_dir)
+    if args.devin_debug:
+        dbg = defaultdict(Counter)
+        _, _, ds, nf = load_devin_local(droots, args.acu_price, warn, dbg)
+        print("Devin folders:", droots or "none found")
+        print(f"files read: {nf}, sessions: {len(ds)}")
+        for label in sorted(dbg):
+            print(f"\n[{label}]")
+            for k, n in sorted(dbg[label].items(), key=lambda kv: (-kv[1], str(kv[0])))[:60]:
+                print(f"  {n:>6}  {k}")
+        for wmsg in warnings:
+            print("note:", wmsg)
+        return
+    dcalls, devents, dlsess, dfiles = load_devin_local(droots, args.acu_price, warn)
+    calls = sorted(calls + dcalls, key=lambda r: (r["ts"], r["sid"]))
+    events = sorted(events + devents, key=lambda r: (r["ts"], r["sid"], r["kind"]))
+    csess.update(dlsess)
     if not dirs:
         warn("No Claude Code projects folder found (looked in ~/.claude/projects). Use --claude-dir.")
-    if not dsess and not os.environ.get("DEVIN_API_KEY") and not args.devin_file:
-        warn("Devin not included: set DEVIN_API_KEY or pass --devin-file <export.json|csv>.")
+    if not dsess and not dlsess:
+        warn("No Devin data found. If Devin Desktop is installed, pass its data folder with --devin-dir "
+             "(Windows: %APPDATA%\\devin, macOS: ~/Library/Application Support/devin).")
 
     periods = []
     for pid, label in PERIODS:
@@ -1165,7 +1573,9 @@ def main():
     if not args.no_html:
         meta = {
             "generated": now.strftime("%Y-%m-%d %H:%M %Z"),
-            "sources": f"{nfiles} Claude log files · {len(csess)} Claude sessions · {len(dsess)} Devin sessions",
+            "sources": f"{nfiles} Claude log files · {dfiles} Devin files · "
+                       f"{sum(1 for s in csess.values() if s['source'] == 'Claude')} Claude sessions · "
+                       f"{len(dlsess) + len(dsess)} Devin sessions",
             "acu_price": args.acu_price,
             "footer": "Generated by skills/scripts/ai-usage-report.py — deterministic, offline. "
                       + (" | ".join(warnings) if warnings else ""),
