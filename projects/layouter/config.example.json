@@ -1,0 +1,50 @@
+{
+  "settleDelay": 1.5,
+  "spaceSwitchDelay": 0.7,
+  "launchTimeout": 20,
+  "manageSpaces": true,
+  "applyOnAppLaunch": true,
+  "gap": 0,
+
+  "profiles": [
+    {
+      "name": "work",
+      "match": { "count": 3, "displays": ["builtin", "DELL U2723QE#1", "DELL U2723QE#2"] },
+      "launch": [
+        "com.google.Chrome",
+        "com.microsoft.VSCode",
+        "com.tinyspeck.slackmacgap",
+        "com.microsoft.Outlook",
+        "com.apple.Terminal"
+      ],
+      "rules": [
+        { "app": "com.microsoft.VSCode",       "display": "DELL U2723QE#1", "space": 1, "layout": "maximize" },
+        { "app": "com.google.Chrome",          "display": "DELL U2723QE#2", "space": 1, "layout": "left-two-thirds" },
+        { "app": "com.apple.Terminal",         "display": "DELL U2723QE#2", "space": 1, "layout": "right-third" },
+        { "app": "com.tinyspeck.slackmacgap",  "display": "builtin",        "space": 1, "layout": "maximize" },
+        { "app": "com.microsoft.Outlook",      "display": "builtin",        "space": 2, "layout": "maximize" }
+      ]
+    },
+    {
+      "name": "home",
+      "match": { "count": 2, "displays": ["builtin", "LG"] },
+      "launch": ["com.google.Chrome", "com.microsoft.VSCode", "com.spotify.client"],
+      "rules": [
+        { "app": "com.microsoft.VSCode", "display": "LG",      "space": 1, "layout": "left-half" },
+        { "app": "com.google.Chrome",    "display": "LG",      "space": 1, "layout": "right-half" },
+        { "app": "com.spotify.client",   "display": "builtin", "space": 2, "layout": { "x": 0.1, "y": 0.1, "w": 0.8, "h": 0.8 } }
+      ]
+    },
+    {
+      "name": "laptop",
+      "match": { "count": 1 },
+      "launch": ["com.google.Chrome", "com.microsoft.VSCode"],
+      "rules": [
+        { "app": "com.microsoft.VSCode",      "space": 1, "layout": "maximize" },
+        { "app": "com.google.Chrome",         "space": 2, "layout": "maximize" },
+        { "app": "com.tinyspeck.slackmacgap", "space": 3, "layout": "maximize" },
+        { "app": "com.spotify.client",        "space": 3, "layout": "center" }
+      ]
+    }
+  ]
+}
