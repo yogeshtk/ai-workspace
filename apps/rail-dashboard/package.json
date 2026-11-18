@@ -17,7 +17,8 @@
     "timetable:import": "node src/server/timetable/import-cli.ts",
     "measure": "node scripts/measure.mjs",
     "icons": "node scripts/gen-icons.mjs",
-    "test:ui": "node scripts/build.mjs && node --test --test-reporter=spec \"test/ui/**/*.test.ts\""
+    "test:ui": "node scripts/build.mjs && node --test --test-reporter=spec \"test/ui/**/*.test.ts\"",
+    "design:export": "node scripts/build.mjs && node scripts/export-design.mjs"
   },
   "dependencies": {
     "uk-railway-stations": "^1.12.0"

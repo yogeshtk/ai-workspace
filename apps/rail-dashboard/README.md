@@ -55,6 +55,7 @@ To use real trains, add the credentials in `.env` (copy `.env.example`). See [Da
 | `npm run typecheck` | `tsc --noEmit` for app, tests and service worker. |
 | `npm run check` | Typecheck + unit/integration tests + build + browser tests. |
 | `npm run timetable:import -- …` | Imports the Network Rail timetable (see below). |
+| `npm run design:export` | Writes `design/dashboard-light.png` (phone screen, 2x), `dashboard-light-full.png` and `dashboard-light.svg` for importing into Figma. The SVG needs `pdftocairo`. |
 | `npm run measure` | Measures time-to-useful-results in headless Chromium (see [Performance](#performance)). |
 
 ---
