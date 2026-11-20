@@ -1,0 +1,126 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-19T21:10:00Z"
+ },
+ "title": "Regulatory Reporting Dashboards \u2014 Transaction Reporting",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 1389,
+   "title": "01 \u00b7 Command centre",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "EmirRefit.dc.html": {
+   "x": 1560,
+   "y": 0,
+   "w": 1440,
+   "h": 1466,
+   "title": "02 \u00b7 EMIR Refit",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Mifir.dc.html": {
+   "x": 0,
+   "y": 1666,
+   "w": 1440,
+   "h": 1380,
+   "title": "03 \u00b7 MiFIR / UK MiFIR",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "SftrCftc.dc.html": {
+   "x": 1560,
+   "y": 1666,
+   "w": 1440,
+   "h": 1186,
+   "title": "04 \u00b7 SFTR & CFTC",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Exceptions.dc.html": {
+   "x": 0,
+   "y": 3332,
+   "w": 1440,
+   "h": 1342,
+   "title": "05 \u00b7 Exceptions workbench",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Rejections.dc.html": {
+   "x": 1560,
+   "y": 3332,
+   "w": 1440,
+   "h": 1236,
+   "title": "06 \u00b7 Rejection analytics",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Completeness.dc.html": {
+   "x": 0,
+   "y": 4998,
+   "w": 1440,
+   "h": 1362,
+   "title": "07 \u00b7 Completeness & reconciliation",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Pipeline.dc.html": {
+   "x": 1560,
+   "y": 4998,
+   "w": 1440,
+   "h": 1387,
+   "title": "08 \u00b7 Pipeline health",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "DataQuality.dc.html": {
+   "x": 0,
+   "y": 6664,
+   "w": 1440,
+   "h": 1376,
+   "title": "09 \u00b7 Data quality & reference data",
+   "expand": "fill",
+   "is_interactive": true
+  },
+  "Controls.dc.html": {
+   "x": 1560,
+   "y": 6664,
+   "w": 1440,
+   "h": 1422,
+   "title": "10 \u00b7 Controls & attestation",
+   "expand": "fill",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "EmirRefit.dc.html",
+  "Mifir.dc.html",
+  "SftrCftc.dc.html",
+  "Exceptions.dc.html",
+  "Rejections.dc.html",
+  "Completeness.dc.html",
+  "Pipeline.dc.html",
+  "DataQuality.dc.html",
+  "Controls.dc.html"
+ ],
+ "designSystems": [],
+ "notes": {
+  "t1": {
+   "x": 0,
+   "y": -300,
+   "text": "Transaction reporting control tower \u00b7 10 screens",
+   "kind": "title1",
+   "maxW": 3000
+  }
+ }
+}
